@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Library — MindSpace</title>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/app.css"/>
+  <style>
+    body { font-family: 'Be Vietnam Pro', sans-serif; background: #f6faf7; color: #2a3532; }
+    h1,h2,h3,h4 { font-family: 'Manrope', sans-serif; }
+    .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; vertical-align:middle; }
+
+    /* ── Layout ── */
+    .page-wrap { display:flex; min-height:100vh; }
+
+    /* ── Sidebar ── */
+    .lib-sidebar {
+      width:256px; flex-shrink:0;
+      background:#ecfdf5; position:fixed; left:0; top:0; height:100vh;
+      display:flex; flex-direction:column; padding:1rem; gap:0.25rem;
+      z-index:40; overflow-y:auto;
+      border-right:1px solid rgba(167,243,208,0.2);
+    }
+    @media(max-width:767px){ .lib-sidebar{ display:none; } }
+    .lib-sidebar .brand { padding:1.5rem 1rem 1rem; }
+    .lib-sidebar .brand h1 { font-family:'Manrope',sans-serif; font-size:1.25rem; font-weight:800; color:#064e3b; }
+    .lib-sidebar .brand p  { font-size:0.7rem; color:#065f46; opacity:0.6; margin-top:2px; }
+    .lib-sidebar nav { flex:1; display:flex; flex-direction:column; gap:0.25rem; }
+    .s-link {
+      display:flex; align-items:center; gap:0.75rem;
+      padding:0.75rem 1rem; border-radius:9999px;
+      font-family:'Manrope',sans-serif; font-size:0.875rem; font-weight:500;
+      color:#047857; text-decoration:none;
+      transition:background 0.15s; transform:scale(0.97);
+    }
+    .s-link:hover { background:#d1fae5; }
+    .s-link.active { background:rgba(167,243,208,0.5); color:#064e3b; font-weight:600; transform:scale(1); }
+    .s-footer { padding-top:1rem; border-top:1px solid rgba(167,243,208,0.3); display:flex; flex-direction:column; gap:0.25rem; }
+    .s-new-btn {
+      width:100%; display:flex; align-items:center; justify-content:center; gap:0.5rem;
+      background:#33685d; color:#e3fff6; border:none; border-radius:9999px;
+      padding:1rem; font-family:'Manrope',sans-serif; font-weight:700; font-size:0.875rem;
+      cursor:pointer; margin-bottom:0.5rem; transition:opacity 0.15s;
+    }
+    .s-new-btn:hover { opacity:0.9; }
+
+    /* ── Topbar ── */
+    .lib-topbar {
+      position:fixed; top:0; left:256px; right:0; z-index:50;
+      background:rgba(236,253,245,0.8); backdrop-filter:blur(20px);
+      display:flex; align-items:center; justify-content:space-between;
+      padding:1rem 1.5rem;
+    }
+    @media(max-width:767px){ .lib-topbar{ left:0; } }
+    .lib-topbar .t-title { font-family:'Manrope',sans-serif; font-size:1.1rem; font-weight:700; color:#064e3b; }
+    .lib-topbar .t-brand { font-family:'Manrope',sans-serif; font-size:1.25rem; font-weight:800; color:#064e3b; display:none; }
+    @media(max-width:767px){ .lib-topbar .t-title{display:none;} .lib-topbar .t-brand{display:block;} }
+    .t-search {
+      display:none; align-items:center; background:#e7f0ec;
+      padding:0.5rem 1rem; border-radius:9999px; gap:0.5rem; width:20rem;
+    }
+    @media(min-width:1024px){ .t-search{ display:flex; } }
+    .t-search input { background:transparent; border:none; outline:none; font-size:0.875rem; width:100%; font-family:'Be Vietnam Pro',sans-serif; }
+    .t-actions { display:flex; align-items:center; gap:0.75rem; }
+    .t-icon-btn { width:2.5rem; height:2.5rem; border-radius:9999px; border:none; background:transparent; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#065f46; transition:background 0.15s; }
+    .t-icon-btn:hover { background:rgba(167,243,208,0.4); }
+    .t-avatar { width:2.5rem; height:2.5rem; border-radius:9999px; object-fit:cover; border:2px solid #b6eee0; cursor:pointer; }
+
+    /* ── Main ── */
+    .lib-main { margin-left:256px; padding-top:5rem; padding-bottom:5rem; padding-left:3rem; padding-right:3rem; flex:1; }
+    @media(max-width:767px){ .lib-main{ margin-left:0; padding-left:1.25rem; padding-right:1.25rem; padding-bottom:6rem; } }
+    .lib-inner { max-width:64rem; margin:0 auto; display:flex; flex-direction:column; gap:3rem; }
+
+    /* ── Mobile search ── */
+    .m-search { display:none; }
+    @media(max-width:1023px){ .m-search{ display:block; margin-bottom:0.5rem; } }
+    .m-search h1 { font-size:clamp(1.75rem,4vw,2.5rem); font-weight:800; margin-bottom:1rem; }
+    .m-search-box { display:flex; align-items:center; background:#e1eae6; padding:0.75rem 1.25rem; border-radius:1rem; gap:0.75rem; }
+    .m-search-box input { background:transparent; border:none; outline:none; font-size:1rem; width:100%; font-family:'Be Vietnam Pro',sans-serif; }
+
+    /* ── Categories ── */
+    .cat-header { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:1.5rem; flex-wrap:wrap; gap:0.75rem; }
+    .cat-label { font-size:0.625rem; font-weight:700; text-transform:uppercase; letter-spacing:0.15em; color:#33685d; display:block; margin-bottom:0.25rem; }
+    .cat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:1.5rem; }
+    @media(max-width:767px){ .cat-grid{ grid-template-columns:repeat(2,1fr); gap:1rem; } }
+    .cat-card {
+      position:relative; overflow:hidden;
+      background:#eef5f2; border-radius:1rem;
+      padding:2rem; min-height:220px;
+      display:flex; flex-direction:column; justify-content:flex-end;
+      cursor:pointer; transition:background 0.2s, transform 0.15s;
+    }
+    .cat-card:hover { background:rgba(182,238,224,0.3); transform:translateY(-2px); }
+    .cat-card:nth-child(2), .cat-card:nth-child(4) { margin-top:2rem; }
+    @media(max-width:767px){ .cat-card:nth-child(2),.cat-card:nth-child(4){ margin-top:0; } }
+    .cat-icon-bg { position:absolute; top:1.5rem; right:1.5rem; opacity:0.2; transition:transform 0.4s; }
+    .cat-card:hover .cat-icon-bg { transform:scale(1.1); }
+    .cat-card h3 { font-size:1.1rem; font-weight:700; margin-bottom:0.25rem; }
+    .cat-card p  { font-size:0.8rem; color:#57615e; }
+
+    /* ── Resources bento ── */
+    .res-grid { display:grid; grid-template-columns:repeat(12,1fr); gap:2rem; }
+    @media(max-width:767px){ .res-grid{ grid-template-columns:1fr; gap:1.25rem; } }
+
+    .res-featured {
+      grid-column:span 8; background:#fff; border-radius:1rem;
+      overflow:hidden; border:1px solid rgba(169,180,176,0.1);
+      cursor:pointer; transition:box-shadow 0.2s;
+      display:flex; flex-direction:column;
+    }
+    @media(max-width:767px){ .res-featured{ grid-column:span 1; } }
+    .res-featured:hover { box-shadow:0 12px 40px rgba(42,53,50,0.08); }
+    .res-featured-inner { display:flex; flex-direction:column; height:100%; }
+    @media(min-width:768px){ .res-featured-inner{ flex-direction:row; } }
+    .res-feat-img { position:relative; min-height:280px; overflow:hidden; }
+    @media(min-width:768px){ .res-feat-img{ width:50%; } }
+    .res-feat-img img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+    .res-feat-badge { position:absolute; top:1rem; left:1rem; background:rgba(51,104,93,0.9); color:#e3fff6; font-size:0.6rem; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; padding:0.25rem 0.75rem; border-radius:9999px; }
+    .res-feat-body { padding:2.5rem; display:flex; flex-direction:column; justify-content:center; }
+    @media(min-width:768px){ .res-feat-body{ flex:1; } }
+    .res-feat-body h3 { font-size:1.5rem; font-weight:800; margin-bottom:1rem; line-height:1.3; }
+    .res-feat-body p  { color:#57615e; line-height:1.6; margin-bottom:2rem; }
+    .res-feat-footer { display:flex; align-items:center; justify-content:space-between; margin-top:auto; }
+
+    .res-side { grid-column:span 4; background:#eef5f2; border-radius:1rem; padding:2rem; display:flex; flex-direction:column; cursor:pointer; border:1px solid transparent; transition:background 0.15s,border-color 0.15s; }
+    @media(max-width:767px){ .res-side{ grid-column:span 1; } }
+    .res-side:hover { background:#fff; border-color:rgba(169,180,176,0.2); }
+    .res-side-icon { width:3rem; height:3rem; border-radius:9999px; display:flex; align-items:center; justify-content:center; margin-bottom:1.5rem; }
+    .res-side h3 { font-size:1.1rem; font-weight:700; margin-bottom:0.75rem; }
+    .res-side p  { font-size:0.875rem; color:#57615e; line-height:1.5; flex:1; margin-bottom:1.5rem; }
+    .res-side-footer { border-top:1px solid rgba(169,180,176,0.12); padding-top:1rem; display:flex; align-items:center; justify-content:space-between; margin-top:auto; }
+
+    .res-tip {
+      grid-column:span 4; position:relative; overflow:hidden;
+      background:#33685d; color:#e3fff6;
+      border-radius:1rem; padding:2rem;
+      display:flex; flex-direction:column;
+      box-shadow:0 8px 24px rgba(51,104,93,0.2);
+    }
+    @media(max-width:767px){ .res-tip{ grid-column:span 1; } }
+    .res-tip h3 { font-size:1.1rem; font-weight:800; margin-bottom:0.75rem; }
+    .res-tip p  { font-size:0.875rem; line-height:1.6; opacity:0.9; position:relative; }
+    .res-tip-deco { position:absolute; right:-2.5rem; bottom:-2.5rem; width:10rem; height:10rem; background:rgba(255,255,255,0.08); border-radius:9999px; }
+
+    /* ── Pagination ── */
+    .pagination { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:1rem; border-top:1px solid rgba(169,180,176,0.2); padding-top:3rem; margin-top:1rem; }
+    .pg-btn { width:2.5rem; height:2.5rem; border-radius:9999px; border:none; cursor:pointer; font-family:'Manrope',sans-serif; font-size:0.875rem; font-weight:600; display:flex; align-items:center; justify-content:center; transition:background 0.15s; }
+    .pg-btn.active { background:#33685d; color:#e3fff6; }
+    .pg-btn:not(.active) { background:transparent; color:#57615e; }
+    .pg-btn:not(.active):hover { background:#e1eae6; }
+
+    /* ── Bottom nav (mobile) ── */
+    .lib-bottom-nav { display:none; }
+    @media(max-width:767px){
+      .lib-bottom-nav {
+        display:flex; justify-content:space-around; align-items:center;
+        position:fixed; bottom:0; left:0; right:0;
+        background:rgba(236,253,245,0.95); backdrop-filter:blur(16px);
+        padding:0.6rem 0.5rem; z-index:50;
+        border-top:1px solid rgba(167,243,208,0.2);
+      }
+    }
+    .lib-bottom-nav a { display:flex; flex-direction:column; align-items:center; gap:2px; text-decoration:none; color:rgba(4,120,87,0.6); font-family:'Manrope',sans-serif; font-size:0.55rem; font-weight:700; text-transform:uppercase; flex:1; }
+    .lib-bottom-nav a.active { color:#064e3b; }
+    .lib-bottom-nav a .pill { background:rgba(167,243,208,0.5); border-radius:0.75rem; padding:0.3rem 0.6rem; margin-bottom:2px; }
+
+    /* ── View all btn ── */
+    .view-all-btn { display:inline-flex; align-items:center; gap:0.25rem; color:#33685d; font-weight:700; font-size:0.875rem; background:transparent; border:1px solid rgba(169,180,176,0.3); border-radius:9999px; padding:0.5rem 1rem; cursor:pointer; transition:background 0.15s; }
+    .view-all-btn:hover { background:rgba(182,238,224,0.3); }
+  </style>
+</head>
+<body>
+
+<!-- ── Sidebar ─────────────────────────────────────────────────────────────── -->
+<aside class="lib-sidebar">
+  <div class="brand">
+    <h1>MindSpace</h1>
+    <p>Your Sanctuary</p>
+  </div>
+  <nav>
+    <a class="s-link" href="dashboard.html"><span class="material-symbols-outlined">dashboard</span><span>Dashboard</span></a>
+    <a class="s-link" href="mood.html"><span class="material-symbols-outlined">mood</span><span>Mood</span></a>
+    <a class="s-link" href="forum.html"><span class="material-symbols-outlined">forum</span><span>Forum</span></a>
+    <a class="s-link active" href="library.html"><span class="material-symbols-outlined">library_books</span><span>Library</span></a>
+    <a class="s-link" href="journal.html"><span class="material-symbols-outlined">menu_book</span><span>Journal</span></a>
+  </nav>
+  <div class="s-footer">
+    <button class="s-new-btn" onclick="location.href='journal.html'">
+      <span class="material-symbols-outlined" style="font-size:1rem;">add</span>New Journal Entry
+    </button>
+    <a class="s-link" href="#"><span class="material-symbols-outlined">settings</span><span>Settings</span></a>
+    <a class="s-link" href="#"><span class="material-symbols-outlined">help_outline</span><span>Support</span></a>
+  </div>
+</aside>
+
+<!-- ── Topbar ──────────────────────────────────────────────────────────────── -->
+<header class="lib-topbar">
+  <div style="display:flex;align-items:center;gap:1rem;">
+    <button class="t-icon-btn" id="mobileMenuBtn" style="display:none;" aria-label="Menu">
+      <span class="material-symbols-outlined">menu</span>
+    </button>
+    <span class="t-brand">MindSpace</span>
+    <span class="t-title">Library</span>
+  </div>
+  <div class="t-search">
+    <span class="material-symbols-outlined" style="color:#727d79;font-size:1.1rem;">search</span>
+    <input type="text" placeholder="Search for help..." oninput="handleSearch(this.value)" id="desktopSearch"/>
+  </div>
+  <div class="t-actions">
+    <button class="t-icon-btn" aria-label="Notifications">
+      <span class="material-symbols-outlined">notifications</span>
+    </button>
+    <img class="t-avatar" id="userAvatar" src="https://ui-avatars.com/api/?name=User&background=b6eee0&color=245a50" alt="Profile"/>
+  </div>
+</header>
+
+<!-- ── Main Content ────────────────────────────────────────────────────────── -->
+<main class="lib-main">
+  <div class="lib-inner">
+
+    <!-- Mobile search -->
+    <div class="m-search">
+      <h1>Find your <span style="color:#33685d;font-style:italic;">clarity.</span></h1>
+      <div class="m-search-box">
+        <span class="material-symbols-outlined" style="color:#727d79;">search</span>
+        <input type="text" placeholder="Search for help..." oninput="handleSearch(this.value)" id="mobileSearch"/>
+      </div>
+    </div>
+
+    <!-- Categories -->
+    <section>
+      <div class="cat-header">
+        <div>
+          <span class="cat-label">Curated Collections</span>
+          <h2 style="font-size:1.5rem;font-weight:700;">Explore Categories</h2>
+        </div>
+        <button class="view-all-btn" onclick="resetFilter()">
+          View All <span class="material-symbols-outlined" style="font-size:0.9rem;">arrow_forward</span>
+        </button>
+      </div>
+      <div class="cat-grid" id="categoriesGrid"></div>
+    </section>
+
+    <!-- Resources -->
+    <section>
+      <div style="margin-bottom:2.5rem;">
+        <span class="cat-label">Most Accessed</span>
+        <h2 style="font-size:1.5rem;font-weight:700;" id="resourcesHeading">Top Resources for You</h2>
+      </div>
+      <div class="res-grid" id="resourcesGrid"></div>
+    </section>
+
+    <!-- Pagination -->
+    <div class="pagination">
+      <p style="font-size:0.875rem;color:#57615e;" id="paginationInfo"></p>
+      <div style="display:flex;align-items:center;gap:0.5rem;" id="paginationBtns"></div>
+    </div>
+
+  </div>
+</main>
+
+<!-- ── Bottom Nav (mobile) ─────────────────────────────────────────────────── -->
+<nav class="lib-bottom-nav">
+  <a href="dashboard.html"><span class="material-symbols-outlined">dashboard</span><span>Home</span></a>
+  <a href="mood.html"><span class="material-symbols-outlined">mood</span><span>Mood</span></a>
+  <a href="forum.html"><span class="material-symbols-outlined">forum</span><span>Forum</span></a>
+  <a class="active" href="library.html"><span class="pill"><span class="material-symbols-outlined">library_books</span></span><span>Library</span></a>
+  <a href="journal.html"><span class="material-symbols-outlined">menu_book</span><span>Journal</span></a>
+</nav>
+
+<script src="js/api.js"></script>
+<script src="js/library.js"></script>
+<script>
+  // Mobile sidebar toggle
+  const mobileBtn = document.getElementById('mobileMenuBtn');
+  const sidebar   = document.querySelector('.lib-sidebar');
+  if(mobileBtn && window.innerWidth < 768) {
+    mobileBtn.style.display = 'flex';
+    mobileBtn.addEventListener('click', () => {
+      const open = sidebar.style.display === 'flex';
+      sidebar.style.display = open ? 'none' : 'flex';
+    });
+    document.addEventListener('click', e => {
+      if(sidebar.style.display === 'flex' && !sidebar.contains(e.target) && e.target !== mobileBtn)
+        sidebar.style.display = 'none';
+    });
+  }
+  // Avatar
+  const u = JSON.parse(localStorage.getItem('ms_user') || '{}');
+  if(u.name) document.getElementById('userAvatar').src =
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}&background=b6eee0&color=245a50`;
+</script>
+</body>
+</html>

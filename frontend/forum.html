@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Forum — MindSpace</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/app.css"/>
+  <style>
+    .post-card { background:var(--surface-container-lowest);border-radius:var(--radius);padding:1.5rem 2rem;transition:transform 0.2s,box-shadow 0.2s; }
+    .post-card:hover { transform:translateY(-2px);box-shadow:0 12px 32px rgba(42,53,50,0.06); }
+    .post-card.featured { background:rgba(182,238,224,0.2); }
+    .avatar-icon { width:3rem;height:3rem;border-radius:var(--radius-full);display:flex;align-items:center;justify-content:center;flex-shrink:0; }
+    .tag-badge { font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;padding:0.2rem 0.5rem;border-radius:0.25rem; }
+    .action-btn { display:inline-flex;align-items:center;gap:0.4rem;padding:0.4rem 1rem;border-radius:var(--radius-full);border:none;font-family:var(--font-headline);font-size:0.8rem;font-weight:700;cursor:pointer;transition:background 0.15s; }
+    .modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.4);backdrop-filter:blur(4px);z-index:100;display:flex;align-items:center;justify-content:center;padding:1rem; }
+    .modal { background:var(--surface);border-radius:var(--radius);padding:2rem;width:100%;max-width:32rem;max-height:90vh;overflow-y:auto; }
+  </style>
+</head>
+<body>
+  <main class="main-content">
+    <div style="max-width:52rem;margin:0 auto;">
+
+      <!-- Header -->
+      <section style="margin-bottom:2.5rem;">
+        <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:1rem;margin-bottom:1.5rem;">
+          <div>
+            <span class="text-label text-primary" style="display:block;margin-bottom:0.25rem;">Peer Community</span>
+            <h2 class="headline" style="font-size:clamp(1.75rem,4vw,2.5rem);font-weight:800;letter-spacing:-0.02em;line-height:1;">Shared Sanctuary</h2>
+            <p style="color:var(--on-surface-variant);margin-top:0.5rem;max-width:36rem;">A safe space to exhale. Share your journey and support others.</p>
+          </div>
+          <button class="btn-primary" onclick="openNewPost()">
+            <span class="material-symbols-outlined">edit_square</span> Share a thought
+          </button>
+        </div>
+
+        <!-- Filter tags -->
+        <div style="display:flex;flex-wrap:wrap;gap:0.5rem;" id="filterTags">
+          <button class="chip active" data-tag="all" onclick="filterPosts('all')">All Stories</button>
+          <button class="chip" data-tag="Anxiety"       onclick="filterPosts('Anxiety')">Anxiety</button>
+          <button class="chip" data-tag="School"        onclick="filterPosts('School')">School</button>
+          <button class="chip" data-tag="Motivation"    onclick="filterPosts('Motivation')">Motivation</button>
+          <button class="chip" data-tag="Stress"        onclick="filterPosts('Stress')">Stress</button>
+          <button class="chip" data-tag="Relationships" onclick="filterPosts('Relationships')">Relationships</button>
+        </div>
+      </section>
+
+      <!-- Feed -->
+      <div id="postsFeed" style="display:flex;flex-direction:column;gap:1rem;"></div>
+
+      <div style="margin-top:3rem;text-align:center;">
+        <button class="btn-outline" id="loadMoreBtn" onclick="loadMore()">Load more stories</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- New Post Modal -->
+  <div class="modal-overlay" id="newPostModal" style="display:none;">
+    <div class="modal">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;">
+        <h3 class="headline" style="font-size:1.2rem;font-weight:700;">Share a thought</h3>
+        <button class="icon-btn" onclick="closeNewPost()"><span class="material-symbols-outlined">close</span></button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:1rem;">
+        <div>
+          <label class="text-label" style="display:block;margin-bottom:0.5rem;color:var(--on-surface-variant);">Tag</label>
+          <div style="display:flex;flex-wrap:wrap;gap:0.5rem;" id="postTagPicker">
+            <button class="chip" data-tag="Anxiety">Anxiety</button>
+            <button class="chip" data-tag="School">School</button>
+            <button class="chip" data-tag="Motivation">Motivation</button>
+            <button class="chip" data-tag="Stress">Stress</button>
+            <button class="chip" data-tag="Relationships">Relationships</button>
+            <button class="chip" data-tag="General">General</button>
+          </div>
+        </div>
+        <div>
+          <label class="text-label" style="display:block;margin-bottom:0.5rem;color:var(--on-surface-variant);">Your message</label>
+          <textarea class="input-field" id="postContent" rows="5" placeholder="What's on your mind? This is a safe space..."></textarea>
+        </div>
+        <p style="font-size:0.75rem;color:var(--on-surface-variant);">Posts are anonymous by default. Be kind and supportive.</p>
+        <button class="btn-primary" id="submitPostBtn" onclick="submitPost()" style="align-self:flex-end;">Post anonymously</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAB (mobile) -->
+  <button style="position:fixed;right:1.5rem;bottom:5rem;width:3.5rem;height:3.5rem;background:var(--primary);color:var(--on-primary);border:none;border-radius:var(--radius-full);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 8px 24px rgba(51,104,93,0.3);z-index:40;" class="md:hidden" onclick="openNewPost()" aria-label="New post">
+    <span class="material-symbols-outlined" style="font-size:1.5rem;">add</span>
+  </button>
+
+  <script src="js/api.js"></script>
+  <script src="js/components/nav.js"></script>
+  <script src="js/forum.js"></script>
+</body>
+</html>

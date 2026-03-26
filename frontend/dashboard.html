@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard — MindSpace</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/app.css"/>
+  <style>
+    .bento { display: grid; grid-template-columns: repeat(12, 1fr); gap: 1.5rem; }
+    .col-7  { grid-column: span 12; } @media(min-width:1024px){ .col-7 { grid-column: span 7; } }
+    .col-5  { grid-column: span 12; } @media(min-width:1024px){ .col-5 { grid-column: span 5; } }
+    .col-12 { grid-column: span 12; }
+    .mood-btn { background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.5rem;transition:transform 0.15s; }
+    .mood-btn:hover { transform:scale(1.15); }
+    .mood-btn.selected .emoji { filter:none!important;opacity:1!important; }
+    .mood-btn .emoji { font-size:3rem;transition:all 0.15s; }
+    .mood-btn .mood-label { font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--on-surface-variant); }
+    .bar-wrap { flex:1;display:flex;flex-direction:column;align-items:center;gap:0.5rem; }
+    .bar-track { width:100%;background:rgba(51,104,93,0.1);border-radius:var(--radius-full);position:relative;overflow:hidden; }
+    .bar-fill  { position:absolute;bottom:0;left:0;right:0;background:rgba(51,104,93,0.5);border-radius:var(--radius-full);transition:height 0.6s ease; }
+    .resource-card { cursor:pointer;transition:transform 0.2s; }
+    .resource-card:hover { transform:translateY(-3px); }
+    .resource-card img { width:100%;aspect-ratio:16/10;object-fit:cover;border-radius:var(--radius);margin-bottom:0.75rem; }
+    .quick-action { display:flex;align-items:center;justify-content:space-between;padding:1.5rem 2rem;border-radius:var(--radius);cursor:pointer;border:none;font-family:var(--font-headline);font-weight:700;font-size:1rem;transition:transform 0.15s,box-shadow 0.15s;width:100%; }
+    .quick-action:hover { transform:translateY(-2px); }
+  </style>
+</head>
+<body>
+  <main class="main-content" id="mainContent">
+    <div style="max-width:72rem;margin:0 auto;">
+
+      <!-- Welcome -->
+      <section style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:1rem;margin-bottom:2.5rem;">
+        <div>
+          <span class="text-label text-primary" style="display:block;margin-bottom:0.25rem;">Welcome back</span>
+          <h2 class="headline" style="font-size:clamp(1.75rem,4vw,3rem);font-weight:800;letter-spacing:-0.02em;" id="greeting">Good day.</h2>
+          <p style="color:var(--on-surface-variant);margin-top:0.5rem;max-width:36rem;">Take a moment to center yourself. Your sanctuary is ready for you.</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.5rem;background:rgba(255,255,255,0.5);backdrop-filter:blur(8px);padding:0.5rem 1rem;border-radius:var(--radius-full);border:1px solid rgba(255,255,255,0.5);">
+          <span class="material-symbols-outlined text-primary" style="font-size:1rem;">calendar_today</span>
+          <span style="font-size:0.875rem;font-weight:500;color:var(--on-surface-variant);" id="todayDate"></span>
+        </div>
+      </section>
+
+      <div class="bento">
+
+        <!-- Mood Check-in -->
+        <section class="col-7 glass-card" style="display:flex;flex-direction:column;justify-content:space-between;min-height:18rem;">
+          <div>
+            <h3 class="headline" style="font-size:1.4rem;font-weight:700;margin-bottom:0.5rem;">How are you feeling today?</h3>
+            <p style="color:var(--on-surface-variant);margin-bottom:2rem;font-size:0.9rem;">Checking in regularly helps us provide better insights.</p>
+            <div style="display:flex;justify-content:space-between;align-items:center;max-width:28rem;margin:0 auto 1.5rem;" id="moodPicker">
+              <button class="mood-btn" data-value="1"><span class="emoji">😞</span><span class="mood-label">Low</span></button>
+              <button class="mood-btn" data-value="2"><span class="emoji">😐</span><span class="mood-label">Okay</span></button>
+              <button class="mood-btn" data-value="3"><span class="emoji">🙂</span><span class="mood-label">Good</span></button>
+              <button class="mood-btn" data-value="4"><span class="emoji">😄</span><span class="mood-label">Great</span></button>
+              <button class="mood-btn" data-value="5"><span class="emoji">😁</span><span class="mood-label">Amazing</span></button>
+            </div>
+          </div>
+          <button class="btn-primary" id="logMoodBtn" style="align-self:center;" disabled>Log today's mood</button>
+          <a href="mood.html" style="align-self:center;margin-top:0.5rem;font-size:0.8rem;color:var(--primary);font-weight:600;text-decoration:none;">Full mood tracker →</a>
+        </section>
+
+        <!-- Weekly Insights -->
+        <section class="col-5 glass-card" style="display:flex;flex-direction:column;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;">
+            <h3 class="headline" style="font-size:1.1rem;font-weight:700;">Weekly Insights</h3>
+            <span class="material-symbols-outlined text-primary">auto_awesome</span>
+          </div>
+          <div style="display:flex;align-items:flex-end;gap:0.5rem;height:7rem;margin-bottom:1rem;" id="moodChart">
+            <!-- bars injected by JS -->
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:1.5rem;">
+            <span style="font-size:0.65rem;font-weight:700;color:var(--outline-variant);text-transform:uppercase;">Mon</span>
+            <span style="font-size:0.65rem;font-weight:700;color:var(--outline-variant);text-transform:uppercase;">Tue</span>
+            <span style="font-size:0.65rem;font-weight:700;color:var(--outline-variant);text-transform:uppercase;">Wed</span>
+            <span style="font-size:0.65rem;font-weight:700;color:var(--outline-variant);text-transform:uppercase;">Thu</span>
+            <span style="font-size:0.65rem;font-weight:700;color:var(--outline-variant);text-transform:uppercase;">Fri</span>
+            <span style="font-size:0.65rem;font-weight:700;color:var(--outline-variant);text-transform:uppercase;">Sat</span>
+            <span style="font-size:0.65rem;font-weight:700;color:var(--outline-variant);text-transform:uppercase;">Sun</span>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:0.75rem;padding-top:1rem;border-top:1px solid rgba(169,180,176,0.15);">
+            <div style="width:2.5rem;height:2.5rem;border-radius:var(--radius-full);background:rgba(51,104,93,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <span class="material-symbols-outlined text-primary" style="font-size:1.1rem;">trending_up</span>
+            </div>
+            <p style="font-size:0.8rem;color:var(--on-surface-variant);line-height:1.5;" id="insightText">Loading insights...</p>
+          </div>
+        </section>
+
+        <!-- Quick Actions -->
+        <div class="col-12" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;">
+          <button class="quick-action" style="background:var(--primary);color:var(--on-primary);" onclick="location.href='journal.html'">
+            <div style="display:flex;align-items:center;gap:1rem;">
+              <div style="width:3rem;height:3rem;background:rgba(255,255,255,0.2);border-radius:var(--radius-full);display:flex;align-items:center;justify-content:center;">
+                <span class="material-symbols-outlined">edit_note</span>
+              </div>
+              <span>Write Journal</span>
+            </div>
+            <span class="material-symbols-outlined">arrow_forward</span>
+          </button>
+          <button class="quick-action glass-card" style="padding:1.5rem 2rem;" onclick="location.href='mood.html'">
+            <div style="display:flex;align-items:center;gap:1rem;">
+              <div style="width:3rem;height:3rem;background:rgba(51,104,93,0.1);border-radius:var(--radius-full);display:flex;align-items:center;justify-content:center;">
+                <span class="material-symbols-outlined text-primary">mood</span>
+              </div>
+              <span>Track Mood</span>
+            </div>
+            <span class="material-symbols-outlined text-primary">arrow_forward</span>
+          </button>
+          <button class="quick-action glass-card" style="padding:1.5rem 2rem;" onclick="location.href='forum.html'">
+            <div style="display:flex;align-items:center;gap:1rem;">
+              <div style="width:3rem;height:3rem;background:rgba(51,104,93,0.1);border-radius:var(--radius-full);display:flex;align-items:center;justify-content:center;">
+                <span class="material-symbols-outlined text-primary">forum</span>
+              </div>
+              <span>Open Forum</span>
+            </div>
+            <span class="material-symbols-outlined text-primary">arrow_forward</span>
+          </button>
+          <button class="quick-action glass-card" style="padding:1.5rem 2rem;" onclick="location.href='library.html'">
+            <div style="display:flex;align-items:center;gap:1rem;">
+              <div style="width:3rem;height:3rem;background:rgba(51,104,93,0.1);border-radius:var(--radius-full);display:flex;align-items:center;justify-content:center;">
+                <span class="material-symbols-outlined text-primary">auto_stories</span>
+              </div>
+              <span>View Resources</span>
+            </div>
+            <span class="material-symbols-outlined text-primary">arrow_forward</span>
+          </button>
+        </div>
+
+        <!-- Recommended Resources -->
+        <section class="col-12">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;">
+            <h3 class="headline" style="font-size:1.4rem;font-weight:700;">Recommended for you</h3>
+            <a href="library.html" style="color:var(--primary);font-weight:700;font-size:0.875rem;text-decoration:none;display:flex;align-items:center;gap:0.25rem;">
+              Explore full library <span class="material-symbols-outlined" style="font-size:1rem;">arrow_forward</span>
+            </a>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:2rem;" id="resourcesGrid">
+            <!-- injected by JS -->
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/components/nav.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>

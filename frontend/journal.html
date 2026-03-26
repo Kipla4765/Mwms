@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Journal — MindSpace</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/app.css"/>
+  <style>
+    .journal-title { width:100%;background:transparent;border:none;outline:none;font-family:var(--font-headline);font-size:clamp(1.75rem,4vw,3rem);font-weight:800;color:var(--on-surface);letter-spacing:-0.02em; }
+    .journal-title::placeholder { color:rgba(42,53,50,0.2); }
+    .journal-body  { width:100%;min-height:20rem;background:transparent;border:none;outline:none;font-family:var(--font-body);font-size:1.1rem;line-height:1.8;color:var(--on-surface);resize:none; }
+    .journal-body::placeholder { color:rgba(42,53,50,0.2); }
+    .ai-btn { background:var(--surface-container-lowest);border:1px solid rgba(169,180,176,0.15);border-radius:var(--radius-full);padding:0.6rem 1.25rem;font-family:var(--font-headline);font-weight:600;font-size:0.8rem;color:var(--primary);cursor:pointer;display:inline-flex;align-items:center;gap:0.4rem;transition:background 0.15s; }
+    .ai-btn:hover { background:rgba(182,238,224,0.3); }
+    .past-card { background:var(--surface-container-low);border-radius:var(--radius);padding:1.5rem;cursor:pointer;transition:transform 0.15s; }
+    .past-card:hover { transform:translateY(-2px); }
+  </style>
+</head>
+<body>
+  <main class="main-content" style="max-width:56rem;margin-left:auto;margin-right:auto;">
+
+    <!-- Writing area -->
+    <section style="margin-bottom:3rem;">
+      <div style="display:flex;flex-direction:column;gap:1.5rem;">
+        <div>
+          <span class="text-label text-primary" style="display:block;margin-bottom:0.5rem;opacity:0.6;">Today's Entry</span>
+          <input class="journal-title" id="journalTitle" type="text" placeholder="Title your reflection..." autocomplete="off"/>
+          <p style="color:var(--on-surface-variant);font-size:0.875rem;margin-top:0.25rem;" id="entryMeta"></p>
+        </div>
+        <textarea class="journal-body" id="journalBody" placeholder="Start writing..."></textarea>
+      </div>
+    </section>
+
+    <!-- AI Panel -->
+    <section style="margin-bottom:3rem;">
+      <div class="card-surface" style="position:relative;overflow:hidden;padding:2rem 2.5rem;">
+        <div class="glow-bg" style="width:16rem;height:16rem;background:rgba(182,238,224,0.25);top:-5rem;right:-5rem;"></div>
+        <div style="position:relative;display:flex;flex-direction:column;gap:1.5rem;">
+          <div style="display:flex;align-items:center;gap:1rem;">
+            <div style="padding:0.75rem;background:var(--primary-container);color:var(--on-primary-container);border-radius:var(--radius-full);display:flex;align-items:center;justify-content:center;">
+              <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">auto_awesome</span>
+            </div>
+            <div>
+              <h3 class="headline" style="font-size:1.1rem;font-weight:700;">AI Reflection Assistant</h3>
+              <p style="font-size:0.8rem;color:var(--on-surface-variant);">Powered by Gemini — tap to analyze your thoughts</p>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-wrap:wrap;gap:0.75rem;">
+            <button class="ai-btn" onclick="aiAction('reflect')">
+              <span class="material-symbols-outlined" style="font-size:1rem;">psychology</span> Reflect
+            </button>
+            <button class="ai-btn" onclick="aiAction('summarize')">
+              <span class="material-symbols-outlined" style="font-size:1rem;">summarize</span> Summarize
+            </button>
+            <button class="ai-btn" onclick="aiAction('coping')">
+              <span class="material-symbols-outlined" style="font-size:1rem;">verified</span> Suggest coping strategies
+            </button>
+          </div>
+
+          <div id="aiResponse" style="display:none;background:rgba(255,255,255,0.7);backdrop-filter:blur(8px);border-radius:var(--radius);padding:1.5rem;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Past entries -->
+    <section>
+      <h3 class="headline" style="font-size:1.4rem;font-weight:700;margin-bottom:1.5rem;">Past Reflections</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;" id="pastEntries"></div>
+    </section>
+
+  </main>
+
+  <!-- Save FAB -->
+  <button id="saveFab" style="position:fixed;right:1.5rem;bottom:5rem;width:3.5rem;height:3.5rem;background:var(--primary);color:var(--on-primary);border:none;border-radius:var(--radius-full);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 8px 24px rgba(51,104,93,0.3);transition:transform 0.15s;z-index:40;" aria-label="Save entry">
+    <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">save</span>
+  </button>
+
+  <script src="js/api.js"></script>
+  <script src="js/components/nav.js"></script>
+  <script src="js/journal.js"></script>
+</body>
+</html>

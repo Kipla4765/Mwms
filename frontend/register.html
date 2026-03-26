@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Register — MindSpace</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/app.css"/>
+</head>
+<body style="background:linear-gradient(135deg,#f6faf7 0%,#e7f0ec 50%,#caf9dc 100%);min-height:100vh;">
+  <div class="glow-bg" style="width:24rem;height:24rem;background:rgba(182,238,224,0.3);top:-6rem;left:-6rem;"></div>
+  <div class="glow-bg" style="width:24rem;height:24rem;background:rgba(202,249,220,0.3);bottom:-6rem;right:-6rem;"></div>
+
+  <main style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.5rem;position:relative;z-index:1;">
+    <div style="width:100%;max-width:28rem;">
+      <div style="text-align:center;margin-bottom:2rem;">
+        <div style="display:inline-flex;align-items:center;justify-content:center;width:3.5rem;height:3.5rem;background:var(--primary);border-radius:1rem;margin-bottom:0.75rem;">
+          <span class="material-symbols-outlined" style="color:var(--on-primary);font-size:1.75rem;font-variation-settings:'FILL' 1;">spa</span>
+        </div>
+        <h1 class="headline" style="font-size:2rem;font-weight:800;color:var(--on-surface);">Create your sanctuary</h1>
+        <p style="color:var(--on-surface-variant);margin-top:0.25rem;">Join MindSpace — it's free.</p>
+      </div>
+
+      <div class="glass-card" style="padding:2.5rem;">
+        <form id="registerForm" novalidate style="display:flex;flex-direction:column;gap:1.25rem;">
+          <div>
+            <label class="text-label" style="display:block;margin-bottom:0.5rem;margin-left:0.25rem;color:var(--on-surface-variant);">Full Name</label>
+            <input class="input-field" id="regName" type="text" placeholder="Your name" required autocomplete="name"/>
+          </div>
+          <div>
+            <label class="text-label" style="display:block;margin-bottom:0.5rem;margin-left:0.25rem;color:var(--on-surface-variant);">Email Address</label>
+            <input class="input-field" id="regEmail" type="email" placeholder="name@example.com" required autocomplete="email"/>
+          </div>
+          <div>
+            <label class="text-label" style="display:block;margin-bottom:0.5rem;margin-left:0.25rem;color:var(--on-surface-variant);">Password</label>
+            <input class="input-field" id="regPassword" type="password" placeholder="Min. 8 characters" required autocomplete="new-password"/>
+          </div>
+          <p id="regError" style="color:var(--error);font-size:0.8rem;display:none;"></p>
+          <button class="btn-primary" type="submit" id="regBtn" style="width:100%;justify-content:center;margin-top:0.5rem;">
+            Create Account <span class="material-symbols-outlined">arrow_forward</span>
+          </button>
+        </form>
+      </div>
+
+      <p style="text-align:center;margin-top:1.5rem;color:var(--on-surface-variant);font-size:0.875rem;">
+        Already have an account?
+        <a href="index.html" style="color:var(--primary);font-weight:700;margin-left:0.25rem;text-decoration:none;">Sign in</a>
+      </p>
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script>
+    if (localStorage.getItem('ms_token')) location.href = 'dashboard.html';
+
+    document.getElementById('registerForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const name  = document.getElementById('regName').value.trim();
+      const email = document.getElementById('regEmail').value.trim();
+      const pass  = document.getElementById('regPassword').value;
+      const errEl = document.getElementById('regError');
+      const btn   = document.getElementById('regBtn');
+
+      if (pass.length < 8) {
+        errEl.textContent = 'Password must be at least 8 characters.';
+        errEl.style.display = 'block'; return;
+      }
+      errEl.style.display = 'none';
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Creating account...';
+
+      try {
+        // await api.register(name, email, pass);
+        await new Promise(r => setTimeout(r, 800)); // mock
+        localStorage.setItem('ms_token', 'mock-token');
+        localStorage.setItem('ms_user', JSON.stringify({ name, email }));
+        location.href = 'dashboard.html';
+      } catch (err) {
+        errEl.textContent = err.message || 'Registration failed.';
+        errEl.style.display = 'block';
+        btn.disabled = false;
+        btn.innerHTML = 'Create Account <span class="material-symbols-outlined">arrow_forward</span>';
+      }
+    });
+  </script>
+</body>
+</html>

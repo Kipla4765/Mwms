@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mood Tracking — MindSpace</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/app.css"/>
+  <style>
+    .mood-btn { background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.5rem;transition:transform 0.15s; }
+    .mood-btn .emoji { font-size:2.75rem;filter:grayscale(1);opacity:0.4;transition:all 0.2s; }
+    .mood-btn:hover .emoji, .mood-btn.selected .emoji { filter:none;opacity:1; }
+    .mood-btn.selected { transform:scale(1.15); }
+    .mood-btn .mood-label { font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--outline);opacity:0;transition:opacity 0.15s; }
+    .mood-btn:hover .mood-label, .mood-btn.selected .mood-label { opacity:1;color:var(--primary); }
+    .entry-row { display:flex;align-items:center;gap:1rem;background:var(--surface-container-lowest);padding:1rem;border-radius:var(--radius);border:1px solid rgba(169,180,176,0.08);cursor:pointer;transition:border-color 0.15s; }
+    .entry-row:hover { border-color:rgba(51,104,93,0.2); }
+    .entry-emoji { width:3.5rem;height:3.5rem;background:var(--surface-container-high);border-radius:0.75rem;display:flex;align-items:center;justify-content:center;font-size:1.75rem;flex-shrink:0; }
+    .tab-btn { padding:0.4rem 1rem;border-radius:var(--radius-full);border:none;font-family:var(--font-headline);font-size:0.8rem;font-weight:600;cursor:pointer;transition:background 0.15s; }
+    .tab-btn.active { background:var(--surface-container-lowest);box-shadow:0 1px 4px rgba(0,0,0,0.06);color:var(--on-surface); }
+    .tab-btn:not(.active) { background:transparent;color:var(--on-surface-variant);opacity:0.6; }
+    .bar-col { flex:1;display:flex;flex-direction:column;align-items:center;gap:0.5rem; }
+    .bar-outer { width:100%;background:rgba(51,104,93,0.1);border-radius:0.5rem 0.5rem 0 0;position:relative;overflow:visible; }
+    .bar-inner { position:absolute;bottom:0;left:0;right:0;background:rgba(51,104,93,0.55);border-radius:0.5rem 0.5rem 0 0;transition:height 0.6s ease; }
+    .bar-emoji { position:absolute;top:-2rem;left:50%;transform:translateX(-50%);font-size:1.1rem; }
+  </style>
+</head>
+<body>
+  <main class="main-content">
+    <div style="max-width:48rem;margin:0 auto;display:flex;flex-direction:column;gap:2.5rem;">
+
+      <!-- Hero -->
+      <section>
+        <h1 class="headline" style="font-size:clamp(1.75rem,4vw,2.75rem);font-weight:800;letter-spacing:-0.02em;margin-bottom:0.5rem;">How are you feeling today?</h1>
+        <p style="color:var(--on-surface-variant);">Take a moment to breathe and check in with yourself.</p>
+      </section>
+
+      <!-- Mood Logger -->
+      <section class="card" style="position:relative;overflow:hidden;">
+        <div class="glow-bg" style="width:16rem;height:16rem;background:rgba(182,238,224,0.2);top:-5rem;right:-5rem;"></div>
+        <div style="position:relative;display:flex;flex-direction:column;gap:2rem;">
+
+          <!-- Emoji scale -->
+          <div style="display:flex;justify-content:space-between;align-items:center;max-width:26rem;margin:0 auto;width:100%;" id="moodPicker">
+            <button class="mood-btn" data-value="1"><span class="emoji">😞</span><span class="mood-label">Awful</span></button>
+            <button class="mood-btn" data-value="2"><span class="emoji">😐</span><span class="mood-label">Meh</span></button>
+            <button class="mood-btn" data-value="3"><span class="emoji">🙂</span><span class="mood-label">Good</span></button>
+            <button class="mood-btn" data-value="4"><span class="emoji">😄</span><span class="mood-label">Great</span></button>
+            <button class="mood-btn" data-value="5"><span class="emoji">😁</span><span class="mood-label">Elite</span></button>
+          </div>
+
+          <!-- Factors -->
+          <div>
+            <label class="text-label" style="display:block;margin-bottom:0.75rem;color:var(--on-surface-variant);">What's influencing your mood?</label>
+            <div style="display:flex;flex-wrap:wrap;gap:0.5rem;" id="factorChips">
+              <button class="chip" data-factor="Stress">Stress</button>
+              <button class="chip" data-factor="Exams">Exams</button>
+              <button class="chip" data-factor="Social">Social</button>
+              <button class="chip" data-factor="Sleep">Sleep</button>
+              <button class="chip" data-factor="Work">Work</button>
+              <button class="chip" data-factor="Health">Health</button>
+              <button class="chip" data-factor="Exercise">Exercise</button>
+              <button class="chip" data-factor="Food">Food</button>
+            </div>
+          </div>
+
+          <!-- Notes -->
+          <div>
+            <label class="text-label" style="display:block;margin-bottom:0.75rem;color:var(--on-surface-variant);">Want to say more?</label>
+            <textarea class="input-field" id="moodNote" rows="3" placeholder="Write down your thoughts..."></textarea>
+          </div>
+
+          <!-- Save -->
+          <div style="display:flex;justify-content:flex-end;">
+            <button class="btn-primary" id="saveMoodBtn" disabled>Save Entry</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Analytics -->
+      <section style="display:flex;flex-direction:column;gap:1rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;">
+          <h2 class="headline" style="font-size:1.4rem;font-weight:700;">Mood Analytics</h2>
+          <div style="background:var(--surface-container);border-radius:var(--radius-full);padding:0.25rem;display:flex;">
+            <button class="tab-btn active" id="tabWeekly" onclick="switchTab('weekly')">Weekly</button>
+            <button class="tab-btn" id="tabMonthly" onclick="switchTab('monthly')">Monthly</button>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr;gap:1rem;">
+          <!-- Chart -->
+          <div class="card-surface" style="padding:1.5rem;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+              <span style="font-size:0.8rem;font-weight:700;color:var(--primary);">Overview</span>
+              <span style="font-size:0.7rem;color:var(--outline);" id="chartRange"></span>
+            </div>
+            <div style="display:flex;align-items:flex-end;gap:0.5rem;height:8rem;padding-bottom:0.25rem;" id="analyticsChart"></div>
+            <div style="display:flex;justify-content:space-between;margin-top:0.5rem;" id="chartLabels"></div>
+          </div>
+
+          <!-- Insight card -->
+          <div style="background:var(--primary);color:var(--on-primary);border-radius:var(--radius);padding:1.5rem;position:relative;overflow:hidden;">
+            <div style="position:absolute;top:0;right:0;padding:1rem;opacity:0.1;">
+              <span class="material-symbols-outlined" style="font-size:4rem;">lightbulb</span>
+            </div>
+            <span class="text-label" style="opacity:0.8;display:block;margin-bottom:0.75rem;">Insight</span>
+            <p style="font-size:1.2rem;font-weight:700;line-height:1.4;margin-bottom:0.5rem;" id="insightCard">You feel better when you sleep 8h+.</p>
+            <p style="font-size:0.8rem;opacity:0.7;">Based on your recent entries.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- History -->
+      <section style="display:flex;flex-direction:column;gap:0.75rem;padding-bottom:2rem;">
+        <h3 class="headline" style="font-size:1.2rem;font-weight:700;">Recent Reflections</h3>
+        <div id="entriesList" style="display:flex;flex-direction:column;gap:0.5rem;"></div>
+      </section>
+
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/components/nav.js"></script>
+  <script src="js/mood.js"></script>
+</body>
+</html>
