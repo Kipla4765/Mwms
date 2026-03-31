@@ -1,73 +1,66 @@
 // library.js — no initNav, no requireAuth redirect (page is self-contained)
 
-const categories = [
-  { icon: 'self_improvement', label: 'Stress Management', count: 12 },
-  { icon: 'school',           label: 'Study Tips',        count: 8  },
-  { icon: 'psychology',       label: 'Anxiety Help',      count: 15 },
-  { icon: 'bedtime',          label: 'Sleep Improvement', count: 10 },
-  { icon: 'favorite',         label: 'Self-Care',         count: 9  },
-  { icon: 'groups',           label: 'Relationships',     count: 7  },
-];
+let categories = [];
+let allResources = [];
 
-const allResources = [
-  {
-    id:1, type:'Article', featured:true,
-    title:'Mastering the Art of Deep Breathing',
-    desc:'A comprehensive guide on physiological sighs and box breathing to reset your nervous system in under 5 minutes.',
-    meta:'8 min read', author:'', icon:'article', iconColor:'primary',
-    img:'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80',
-    category:'Stress Management',
-  },
-  {
-    id:2, type:'Video', featured:false,
-    title:'10-Minute Desk Yoga for Focus',
-    desc:'Simple movements to release tension during long study sessions or work days.',
-    meta:'10 min video', author:'Dr. Sarah Chen', icon:'play_circle', iconColor:'tertiary',
-    img:'', category:'Study Tips',
-  },
-  {
-    id:3, type:'Guide', featured:false,
-    title:'The Anxiety Toolkit (PDF)',
-    desc:'A collection of grounding techniques and cognitive reframing worksheets for daily use.',
-    meta:'2.4 MB Download', author:'', icon:'description', iconColor:'secondary',
-    img:'', category:'Anxiety Help',
-  },
-  {
-    id:4, type:'Article', featured:false,
-    title:'Sleep Hygiene 101',
-    desc:'Optimizing your bedroom environment for deep, restorative sleep cycles tonight.',
-    meta:'5 min read', author:'', icon:'article', iconColor:'primary',
-    img:'', category:'Sleep Improvement',
-  },
-  {
-    id:5, type:'Audio', featured:false,
-    title:'Body Scan Meditation',
-    desc:'A 15-minute guided body scan to release physical tension and quiet the mind before sleep.',
-    meta:'15 min audio', author:'', icon:'headphones', iconColor:'tertiary',
-    img:'', category:'Self-Care',
-  },
-  {
-    id:6, type:'Article', featured:false,
-    title:'Setting Healthy Boundaries',
-    desc:'Practical strategies for communicating your needs and protecting your energy in relationships.',
-    meta:'6 min read', author:'', icon:'article', iconColor:'secondary',
-    img:'', category:'Relationships',
-  },
-  {
-    id:7, type:'Video', featured:false,
-    title:'Mindful Journaling for Beginners',
-    desc:'How to start a journaling practice that actually sticks and improves your mental clarity.',
-    meta:'12 min video', author:'', icon:'play_circle', iconColor:'primary',
-    img:'', category:'Self-Care',
-  },
-  {
-    id:8, type:'Article', featured:false,
-    title:'The Science of Stress',
-    desc:'Understanding cortisol, your fight-or-flight response, and how to work with your body.',
-    meta:'7 min read', author:'', icon:'article', iconColor:'tertiary',
-    img:'', category:'Stress Management',
-  },
-];
+const CATEGORY_ICONS = {
+  'Stress Management': 'self_improvement',
+  'Study Tips': 'school',
+  'Anxiety Help': 'psychology',
+  'Sleep Improvement': 'bedtime',
+  'Self-Care': 'favorite',
+  'Relationships': 'groups',
+};
+
+const TYPE_ICONS = {
+  'article': 'article',
+  'video': 'play_circle',
+  'guide': 'description',
+  'audio': 'headphones',
+};
+
+const TYPE_COLORS = {
+  'article': 'primary',
+  'video': 'tertiary',
+  'guide': 'secondary',
+  'audio': 'tertiary',
+};
+
+async function loadLibrary() {
+  try {
+    const [cats, resources] = await Promise.all([
+      api.getCategories(),
+      api.getResources()
+    ]);
+    
+    categories = cats.map(c => ({
+      icon: CATEGORY_ICONS[c.name] || 'spa',
+      label: c.name,
+      count: c.resourceCount || 0,
+    }));
+    
+    allResources = resources.map(r => ({
+      id: r.id,
+      type: r.type || 'Article',
+      featured: r.featured || false,
+      title: r.title,
+      desc: r.description || '',
+      meta: r.duration || r.meta || '',
+      author: r.author || '',
+      icon: TYPE_ICONS[r.type?.toLowerCase()] || 'article',
+      iconColor: TYPE_COLORS[r.type?.toLowerCase()] || 'primary',
+      img: r.imageUrl || '',
+      category: r.category?.name || r.category || '',
+    }));
+    
+    renderCategories();
+    renderResources();
+  } catch (e) {
+    console.error('Failed to load library:', e);
+    renderCategories();
+    renderResources();
+  }
+}
 
 const IC = {
   primary:   { bg:'#b6eee0', text:'#245a50' },
@@ -257,7 +250,6 @@ window.handleSearch = handleSearch;
 function openResource(id) {
   const r = allResources.find(x => x.id === id);
   if (!r) return;
-  // Simple toast for now — replace with navigation when detail page exists
   const msg = document.createElement('div');
   msg.style.cssText = 'position:fixed;bottom:5rem;right:1.5rem;background:#33685d;color:#e3fff6;padding:0.875rem 1.5rem;border-radius:1rem;font-size:0.875rem;font-weight:500;z-index:100;animation:fadeIn 0.2s ease;';
   msg.textContent = `"${r.title}" — detail page coming soon`;
@@ -267,5 +259,4 @@ function openResource(id) {
 window.openResource = openResource;
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
-renderCategories();
-renderResources();
+loadLibrary();

@@ -70,10 +70,7 @@
       btn.innerHTML = '<span class="spinner"></span> Creating account...';
 
       try {
-        // await api.register(name, email, pass);
-        await new Promise(r => setTimeout(r, 800)); // mock
-        localStorage.setItem('ms_token', 'mock-token');
-        localStorage.setItem('ms_user', JSON.stringify({ name, email }));
+        await api.register(name, email, pass);
         location.href = 'dashboard.html';
       } catch (err) {
         errEl.textContent = err.message || 'Registration failed.';

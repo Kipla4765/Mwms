@@ -29,16 +29,9 @@ document.getElementById('loginForm').addEventListener('submit', async function (
   btn.innerHTML = '<span class="spinner"></span> Logging in...';
 
   try {
-    // ── Swap this block with real API call when backend is ready ──
-    // const data = await api.login(email, password);
-    // localStorage.setItem('ms_token', data.token);
-    // localStorage.setItem('ms_user', JSON.stringify(data.user));
-
-    // Temporary mock — remove when backend is live
-    await new Promise(r => setTimeout(r, 800));
-    localStorage.setItem('ms_token', 'mock-token');
-    localStorage.setItem('ms_user', JSON.stringify({ name: 'Emmanuel', email }));
-    // ─────────────────────────────────────────────────────────────
+    const data = await api.login(email, password);
+    localStorage.setItem('ms_token', data.token);
+    localStorage.setItem('ms_user', JSON.stringify(data.user));
 
     const redirect = sessionStorage.getItem('ms_redirect');
     sessionStorage.removeItem('ms_redirect');

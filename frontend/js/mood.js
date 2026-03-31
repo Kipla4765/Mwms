@@ -46,17 +46,8 @@ document.getElementById('saveMoodBtn').addEventListener('click', async () => {
   };
 
   try {
-    // await api.logMood(entry);
-    await new Promise(r => setTimeout(r, 700)); // mock
-    // Prepend to local mock list
-    mockEntries.unshift({
-      emoji: EMOJIS[selectedMood],
-      label: LABELS[selectedMood],
-      title: `${LABELS[selectedMood]} day`,
-      note: entry.note || 'No notes added.',
-      date: 'Just now',
-    });
-    renderEntries();
+    await api.logMood(entry);
+    await loadEntries();
     showToast('Mood saved!', 'success');
     // Reset
     document.querySelectorAll('#moodPicker .mood-btn').forEach(b => b.classList.remove('selected'));
@@ -107,24 +98,44 @@ window.switchTab = switchTab;
 switchTab('weekly');
 
 // ── Entries list ─────────────────────────────────────────────────────────────
-const mockEntries = [
-  { emoji:'😁', label:'Amazing', title:'Fantastic Friday', note:'Finally finished the major project! Feeling a huge weight off my shoulders.', date:'Today, 9:42 AM' },
-  { emoji:'🙂', label:'Good',    title:'Steady Morning',   note:'Good sleep, morning walk was refreshing. Ready for the day.', date:'Yesterday' },
-  { emoji:'😞', label:'Awful',   title:'Feeling Overwhelmed', note:'Too many exams scheduled for the same week. Struggling to keep up.', date:'Oct 25' },
-];
+let entries = [];
+
+async function loadEntries() {
+  try {
+    entries = await api.getMoods();
+    renderEntries();
+  } catch (e) {
+    entries = [];
+    renderEntries();
+  }
+}
 
 function renderEntries() {
-  document.getElementById('entriesList').innerHTML = mockEntries.map(e => `
+  if (entries.length === 0) {
+    document.getElementById('entriesList').innerHTML = `
+      <div style="text-align:center;padding:2rem;color:var(--on-surface-variant);">
+        <span class="material-symbols-outlined" style="font-size:3rem;opacity:0.3;">mood</span>
+        <p style="margin-top:1rem;">No mood entries yet. Log your first mood!</p>
+      </div>`;
+    return;
+  }
+  document.getElementById('entriesList').innerHTML = entries.map(e => {
+    const emoji = EMOJIS[e.value] || '';
+    const label = LABELS[e.value] || '';
+    const date = new Date(e.loggedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + 
+                 (new Date(e.loggedAt).toDateString() === new Date().toDateString() ? ', Today' : '');
+    return `
     <div class="entry-row">
-      <div class="entry-emoji">${e.emoji}</div>
+      <div class="entry-emoji">${emoji}</div>
       <div style="flex:1;min-width:0;">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;">
-          <h4 class="headline" style="font-size:0.95rem;font-weight:700;">${e.title}</h4>
-          <span style="font-size:0.7rem;color:var(--outline);white-space:nowrap;">${e.date}</span>
+          <h4 class="headline" style="font-size:0.95rem;font-weight:700;">${label} day</h4>
+          <span style="font-size:0.7rem;color:var(--outline);white-space:nowrap;">${date}</span>
         </div>
-        <p style="font-size:0.8rem;color:var(--on-surface-variant);margin-top:0.2rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.note}</p>
+        <p style="font-size:0.8rem;color:var(--on-surface-variant);margin-top:0.2rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.note || 'No notes added.'}</p>
       </div>
       <span class="material-symbols-outlined" style="color:var(--outline);font-size:1.25rem;">chevron_right</span>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
-renderEntries();
+loadEntries();

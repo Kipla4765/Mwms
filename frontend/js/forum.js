@@ -17,12 +17,43 @@ const TAG_COLORS = {
   General:       { bg: 'var(--surface-container)',      text: 'var(--on-surface-variant)' },
 };
 
-let allPosts = [
-  { id:1, author:'Anonymous Owl',    icon:'face_6',          colorIdx:0, tag:'Anxiety',    time:'2 hours ago',  text:"Does anyone else feel like they're just holding their breath until the weekend? Trying to find small moments of peace during the mid-week rush, but it's hard when exams are looming.", support:12, replies:4,  supported:false, featured:false },
-  { id:2, author:'Silent Wanderer',  icon:'person_4',        colorIdx:1, tag:'Motivation', time:'5 hours ago',  text:"Finally managed to step outside for a 10-minute walk today after being stuck at my desk for 8 hours. The fresh air felt like a reset button. Highly recommend taking that tiny break even when it feels impossible. 🌿", support:28, replies:1, supported:false, featured:true  },
-  { id:3, author:'Morning Mist',     icon:'sentiment_neutral',colorIdx:2, tag:'Stress',    time:'8 hours ago',  text:"Struggling with burnout. How do you all separate your personal life from work when your office is literally 5 feet from your bed? My brain won't stop thinking about spreadsheets even at midnight.", support:8, replies:15, supported:false, featured:false },
-  { id:4, author:'Quiet River',      icon:'face_3',          colorIdx:3, tag:'School',     time:'Yesterday',    text:"Passed my midterms! I honestly didn't think I would make it through this semester. If you're struggling right now — you're not alone, and it does get better. 💚", support:45, replies:7, supported:false, featured:false },
-];
+let allPosts = [];
+let supportedPosts = new Set();
+
+async function loadPosts() {
+  try {
+    const posts = await api.getPosts();
+    allPosts = posts.map(p => ({
+      id: p.id,
+      author: p.authorName || 'Anonymous',
+      icon: AVATAR_ICONS[p.id % AVATAR_ICONS.length],
+      colorIdx: p.id % AVATAR_COLORS.length,
+      tag: p.tag || 'General',
+      time: getTimeAgo(new Date(p.createdAt)),
+      text: p.content,
+      support: p.supportCount || 0,
+      replies: p.replyCount || 0,
+      supported: supportedPosts.has(p.id),
+      featured: p.featured || false,
+    }));
+    renderPosts();
+  } catch (e) {
+    allPosts = [];
+    renderPosts();
+  }
+}
+
+function getTimeAgo(date) {
+  const now = new Date();
+  const diff = Math.floor((now - date) / 1000);
+  if (diff < 60) return 'Just now';
+  if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
+  const days = Math.floor(diff / 86400);
+  if (days === 1) return 'Yesterday';
+  if (days < 7) return `${days} days ago`;
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
 let visibleCount = 4;
 let activeTag = 'all';
 
@@ -86,12 +117,19 @@ function loadMore() {
 }
 window.loadMore = loadMore;
 
-function toggleSupport(id) {
+async function toggleSupport(id) {
   const post = allPosts.find(p => p.id === id);
   if (!post) return;
-  post.supported = !post.supported;
-  post.support += post.supported ? 1 : -1;
-  renderPosts();
+  try {
+    await api.supportPost(id);
+    post.supported = !post.supported;
+    post.support += post.supported ? 1 : -1;
+    if (post.supported) supportedPosts.add(id);
+    else supportedPosts.delete(id);
+    renderPosts();
+  } catch (e) {
+    showToast(e.message, 'error');
+  }
 }
 
 // ── New post modal ────────────────────────────────────────────────────────────
@@ -126,16 +164,9 @@ async function submitPost() {
   btn.innerHTML = '<span class="spinner"></span>';
 
   try {
-    // await api.createPost({ text, tag: selectedTag || 'General' });
-    await new Promise(r => setTimeout(r, 700));
-    const icons = AVATAR_ICONS;
-    allPosts.unshift({
-      id: Date.now(), author: 'You', icon: icons[Math.floor(Math.random() * icons.length)],
-      colorIdx: 3, tag: selectedTag || 'General', time: 'Just now',
-      text, support: 0, replies: 0, supported: false, featured: false,
-    });
+    await api.createPost({ text, tag: selectedTag || 'General' });
     closeNewPost();
-    renderPosts();
+    await loadPosts();
     showToast('Posted anonymously!', 'success');
   } catch (e) {
     showToast(e.message, 'error');
@@ -151,4 +182,4 @@ document.getElementById('newPostModal').addEventListener('click', function (e) {
   if (e.target === this) closeNewPost();
 });
 
-renderPosts();
+loadPosts();
