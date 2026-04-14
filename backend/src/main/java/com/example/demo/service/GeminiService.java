@@ -1,8 +1,8 @@
 package com.example.demo.service;
 
 import com.example.demo.exception.GatewayException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,6 +12,7 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestClientException;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -43,89 +44,90 @@ public class GeminiService {
 
     private final RestClient restClient;
     private final String apiKey;
-    private final String model;
+    private final List<String> models;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public GeminiService(
             @Value("${app.openrouter.api-key}") String apiKey,
-            @Value("${app.openrouter.model}") String model) {
-        this.apiKey = apiKey;
-        this.model  = model;
+            @Value("${app.openrouter.models}") String modelsConfig) {
+        this.apiKey  = apiKey;
+        this.models  = Arrays.asList(modelsConfig.split(","));
         this.restClient = RestClient.builder().build();
+        log.info("AI service initialized with {} models: {}", models.size(), models);
     }
 
     public String reflect(String text, String action) {
         String instruction = PROMPTS.getOrDefault(action, PROMPTS.get("summarize"));
 
         Map<String, Object> requestBody = Map.of(
-                "model", model,
                 "messages", List.of(
                         Map.of("role", "user", "content", instruction + text)
                 )
         );
 
-        int maxRetries = 3;
-        long delayMs   = 5000;
+        // Try each model in order; move to next on 429
+        for (int m = 0; m < models.size(); m++) {
+            String model = models.get(m).trim();
+            log.info("Trying model [{}/{}]: {}", m + 1, models.size(), model);
 
-        for (int attempt = 1; attempt <= maxRetries; attempt++) {
+            Map<String, Object> body = new java.util.HashMap<>(requestBody);
+            body.put("model", model);
+
             try {
-                log.info("OpenRouter request: model={}, action={}, attempt={}", model, action, attempt);
-
                 String raw = restClient.post()
                         .uri(OPENROUTER_URL)
                         .header("Authorization", "Bearer " + apiKey)
                         .header("HTTP-Referer", "http://localhost:5500")
                         .header("X-Title", "MindSpace")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .body(requestBody)
+                        .body(body)
                         .retrieve()
-                        .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(), (req, res) -> {
-                            String body = new String(res.getBody().readAllBytes());
-                            log.error("OpenRouter error {}: {}", res.getStatusCode(), body);
-                            if (res.getStatusCode().value() == 429) {
-                                throw new GatewayException("AI rate limited. Please try again in a moment.");
-                            }
-                            throw new GatewayException("AI service error " + res.getStatusCode().value() + ": " + body);
-                        })
+                        .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(),
+                                (req, res) -> {
+                                    String errBody = new String(res.getBody().readAllBytes());
+                                    log.error("Model {} error {}: {}", model, res.getStatusCode(), errBody);
+                                    if (res.getStatusCode().value() == 429) {
+                                        throw new RateLimitException("Rate limited on " + model);
+                                    }
+                                    throw new GatewayException("AI error " + res.getStatusCode().value());
+                                })
                         .body(String.class);
 
                 JsonNode response = objectMapper.readTree(raw);
-                String content = response
-                        .path("choices").get(0)
-                        .path("message")
-                        .path("content")
-                        .asText();
+                String content = response.path("choices").get(0)
+                        .path("message").path("content").asText();
 
                 if (content == null || content.isBlank()) {
-                    log.error("Empty content from OpenRouter. Full response: {}", response);
-                    throw new GatewayException("AI returned an empty response.");
-                }
-
-                log.info("OpenRouter success, content length={}", content.length());
-                return content;
-
-            } catch (GatewayException e) {
-                // re-throw our own exceptions directly — check if retryable
-                if (e.getMessage().contains("rate limited") && attempt < maxRetries) {
-                    try { Thread.sleep(delayMs * attempt); } catch (InterruptedException ie) {
-                        Thread.currentThread().interrupt();
-                    }
+                    log.warn("Empty response from model {}, trying next", model);
                     continue;
                 }
-                throw e;
+
+                log.info("Success with model: {}", model);
+                return content;
+
+            } catch (RateLimitException e) {
+                log.warn("Model {} rate limited, trying next", model);
+                // continue to next model
+            } catch (GatewayException e) {
+                throw e; // non-429 error, don't retry
             } catch (RestClientException e) {
-                log.error("RestClient error on attempt {}: {}", attempt, e.getMessage());
-                if (attempt == maxRetries) {
-                    throw new GatewayException("AI service is currently unavailable: " + e.getMessage());
-                }
-                try { Thread.sleep(delayMs); } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
+                log.error("Network error with model {}: {}", model, e.getMessage());
+                if (m == models.size() - 1) {
+                    throw new GatewayException("AI service unavailable: " + e.getMessage());
                 }
             } catch (Exception e) {
-                log.error("Unexpected error calling OpenRouter: {}", e.getMessage(), e);
-                throw new GatewayException("Failed to process AI response: " + e.getMessage());
+                log.error("Unexpected error with model {}: {}", model, e.getMessage());
+                if (m == models.size() - 1) {
+                    throw new GatewayException("Failed to process AI response");
+                }
             }
         }
-        throw new GatewayException("AI service unavailable after retries.");
+
+        throw new GatewayException("All AI models are currently rate limited. Please try again in a moment.");
+    }
+
+    // Internal exception to signal 429 without breaking the loop
+    private static class RateLimitException extends RuntimeException {
+        RateLimitException(String msg) { super(msg); }
     }
 }
