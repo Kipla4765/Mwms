@@ -1,5 +1,6 @@
 package com.example.demo.dto.forum;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import java.time.LocalDateTime;
 
 public record PostResponse(
@@ -8,7 +9,7 @@ public record PostResponse(
         String tag,
         String body,
         boolean isFeatured,
-        LocalDateTime createdAt,
+        @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss") LocalDateTime createdAt,
         long supportCount,
         long replyCount
 ) {}

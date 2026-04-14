@@ -43,10 +43,3 @@ document.getElementById('loginForm').addEventListener('submit', async function (
     btn.innerHTML = 'Login <span class="material-symbols-outlined">arrow_forward</span>';
   }
 });
-
-// Google OAuth placeholder
-document.getElementById('googleBtn').addEventListener('click', () => {
-  // TODO: redirect to Spring Boot OAuth2 endpoint
-  // window.location.href = `${API_BASE}/oauth2/authorization/google`;
-  showToast('Google login coming soon — backend needed.', 'default');
-});

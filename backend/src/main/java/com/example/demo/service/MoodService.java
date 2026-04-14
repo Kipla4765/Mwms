@@ -46,6 +46,28 @@ public class MoodService {
         return toResponse(saved);
     }
 
+    public MoodResponse updateMood(Integer id, MoodRequest req, Integer userId) {
+        MoodEntry entry = moodEntryRepository.findById(id)
+                .filter(e -> e.getUserId().equals(userId))
+                .orElseThrow(() -> new com.example.demo.exception.EntityNotFoundException("Mood entry not found"));
+
+        entry.setValue(req.value());
+        entry.setNote(req.note());
+        entry.getFactors().clear();
+
+        if (req.factors() != null) {
+            List<MoodFactor> factors = req.factors().stream().map(f -> {
+                MoodFactor mf = new MoodFactor();
+                mf.setFactor(f);
+                mf.setMoodEntry(entry);
+                return mf;
+            }).collect(Collectors.toList());
+            entry.getFactors().addAll(factors);
+        }
+
+        return toResponse(moodEntryRepository.save(entry));
+    }
+
     private MoodResponse toResponse(MoodEntry entry) {
         List<String> factors = entry.getFactors().stream()
                 .map(MoodFactor::getFactor)

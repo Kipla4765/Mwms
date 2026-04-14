@@ -4,5 +4,6 @@ import jakarta.validation.constraints.NotBlank;
 
 public record AiReflectRequest(
         @NotBlank String text,
-        @NotBlank String action
+        @NotBlank String action,
+        Integer journalId
 ) {}

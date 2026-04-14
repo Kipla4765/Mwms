@@ -14,10 +14,27 @@ import com.example.demo.repository.ForumReplyRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 @Service
 public class ForumService {
+
+    private static final String[] ADJECTIVES = {
+        "Calm", "Brave", "Gentle", "Quiet", "Bright", "Kind", "Warm", "Bold",
+        "Soft", "Wise", "Swift", "Serene", "Hopeful", "Tender", "Steady"
+    };
+    private static final String[] ANIMALS = {
+        "Owl", "Fox", "Deer", "Bear", "Wolf", "Hawk", "Lynx", "Crane",
+        "Otter", "Raven", "Finch", "Heron", "Panda", "Koala", "Seal"
+    };
+    private static final Random RANDOM = new Random();
+
+    private String randomAlias() {
+        String adj    = ADJECTIVES[RANDOM.nextInt(ADJECTIVES.length)];
+        String animal = ANIMALS[RANDOM.nextInt(ANIMALS.length)];
+        return adj + " " + animal;
+    }
 
     private final ForumPostRepository forumPostRepository;
     private final ForumPostSupportRepository supportRepository;
@@ -42,7 +59,11 @@ public class ForumService {
         post.setUserId(userId);
         post.setBody(req.body());
         post.setTag(req.tag() != null && !req.tag().isBlank() ? req.tag() : "General");
-        post.setDisplayName(req.displayName() != null && !req.displayName().isBlank() ? req.displayName() : "Anonymous");
+        // If a real displayName is provided (non-anonymous), use it; otherwise generate a random alias
+        String name = (req.displayName() != null && !req.displayName().isBlank())
+                ? req.displayName()
+                : randomAlias();
+        post.setDisplayName(name);
         return toPostResponse(forumPostRepository.save(post));
     }
 
@@ -67,7 +88,10 @@ public class ForumService {
         reply.setPostId(postId);
         reply.setUserId(userId);
         reply.setBody(req.text());
-        reply.setDisplayName(req.displayName() != null && !req.displayName().isBlank() ? req.displayName() : "Anonymous");
+        String name = (req.displayName() != null && !req.displayName().isBlank())
+                ? req.displayName()
+                : randomAlias();
+        reply.setDisplayName(name);
         ForumReply saved = replyRepository.save(reply);
         return new ReplyResponse(saved.getId(), saved.getDisplayName(), saved.getBody(), saved.getCreatedAt());
     }

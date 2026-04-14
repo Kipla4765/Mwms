@@ -31,8 +31,9 @@ const api = {
   logout:   ()                  => request('POST', '/auth/logout'),
 
   // Mood
-  getMoods:  ()      => request('GET',  '/mood'),
-  logMood:   (data)  => request('POST', '/mood', data),
+  getMoods:  ()           => request('GET',  '/mood'),
+  logMood:   (data)       => request('POST', '/mood', data),
+  updateMood:(id, data)   => request('PUT',  `/mood/${id}`, data),
 
   // Journal
   getJournals:   ()     => request('GET',  '/journal'),
@@ -54,10 +55,9 @@ const api = {
   getCategories:  ()       => request('GET', '/library/categories'),
 };
 
-// Guard: redirect to login if no token (call on protected pages)
+// Guard: redirect to login if no token
 function requireAuth() {
   if (!localStorage.getItem('ms_token')) {
-    // Store intended destination so login can redirect back
     sessionStorage.setItem('ms_redirect', window.location.href);
     location.href = 'index.html';
   }

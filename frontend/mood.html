@@ -4,7 +4,6 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Mood Tracking — MindSpace</title>
-  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="css/app.css"/>
   <style>
     .mood-btn { background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.5rem;transition:transform 0.15s; }
@@ -35,12 +34,16 @@
         <p style="color:var(--on-surface-variant);">Take a moment to breathe and check in with yourself.</p>
       </section>
 
+      <!-- Today's mood banner -->
+      <div id="todayMoodBanner" style="display:none;align-items:center;gap:1rem;background:rgba(182,238,224,0.25);border:1px solid rgba(51,104,93,0.15);border-radius:var(--radius);padding:1rem 1.25rem;">
+        <span id="todayMoodEmoji" style="font-size:2rem;"></span>
+        <p id="todayMoodLabel" style="font-size:0.9rem;color:var(--on-surface);font-weight:600;flex:1;"></p>
+      </div>
+
       <!-- Mood Logger -->
       <section class="card" style="position:relative;overflow:hidden;">
         <div class="glow-bg" style="width:16rem;height:16rem;background:rgba(182,238,224,0.2);top:-5rem;right:-5rem;"></div>
         <div style="position:relative;display:flex;flex-direction:column;gap:2rem;">
-
-          <!-- Emoji scale -->
           <div style="display:flex;justify-content:space-between;align-items:center;max-width:26rem;margin:0 auto;width:100%;" id="moodPicker">
             <button class="mood-btn" data-value="1"><span class="emoji">😞</span><span class="mood-label">Awful</span></button>
             <button class="mood-btn" data-value="2"><span class="emoji">😐</span><span class="mood-label">Meh</span></button>
@@ -48,8 +51,6 @@
             <button class="mood-btn" data-value="4"><span class="emoji">😄</span><span class="mood-label">Great</span></button>
             <button class="mood-btn" data-value="5"><span class="emoji">😁</span><span class="mood-label">Elite</span></button>
           </div>
-
-          <!-- Factors -->
           <div>
             <label class="text-label" style="display:block;margin-bottom:0.75rem;color:var(--on-surface-variant);">What's influencing your mood?</label>
             <div style="display:flex;flex-wrap:wrap;gap:0.5rem;" id="factorChips">
@@ -63,14 +64,10 @@
               <button class="chip" data-factor="Food">Food</button>
             </div>
           </div>
-
-          <!-- Notes -->
           <div>
             <label class="text-label" style="display:block;margin-bottom:0.75rem;color:var(--on-surface-variant);">Want to say more?</label>
             <textarea class="input-field" id="moodNote" rows="3" placeholder="Write down your thoughts..."></textarea>
           </div>
-
-          <!-- Save -->
           <div style="display:flex;justify-content:flex-end;">
             <button class="btn-primary" id="saveMoodBtn" disabled>Save Entry</button>
           </div>
@@ -86,9 +83,7 @@
             <button class="tab-btn" id="tabMonthly" onclick="switchTab('monthly')">Monthly</button>
           </div>
         </div>
-
         <div style="display:grid;grid-template-columns:1fr;gap:1rem;">
-          <!-- Chart -->
           <div class="card-surface" style="padding:1.5rem;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
               <span style="font-size:0.8rem;font-weight:700;color:var(--primary);">Overview</span>
@@ -97,14 +92,12 @@
             <div style="display:flex;align-items:flex-end;gap:0.5rem;height:8rem;padding-bottom:0.25rem;" id="analyticsChart"></div>
             <div style="display:flex;justify-content:space-between;margin-top:0.5rem;" id="chartLabels"></div>
           </div>
-
-          <!-- Insight card -->
           <div style="background:var(--primary);color:var(--on-primary);border-radius:var(--radius);padding:1.5rem;position:relative;overflow:hidden;">
             <div style="position:absolute;top:0;right:0;padding:1rem;opacity:0.1;">
               <span class="material-symbols-outlined" style="font-size:4rem;">lightbulb</span>
             </div>
             <span class="text-label" style="opacity:0.8;display:block;margin-bottom:0.75rem;">Insight</span>
-            <p style="font-size:1.2rem;font-weight:700;line-height:1.4;margin-bottom:0.5rem;" id="insightCard">You feel better when you sleep 8h+.</p>
+            <p style="font-size:1.2rem;font-weight:700;line-height:1.4;margin-bottom:0.5rem;" id="insightCard">Loading...</p>
             <p style="font-size:0.8rem;opacity:0.7;">Based on your recent entries.</p>
           </div>
         </div>
@@ -119,6 +112,40 @@
     </div>
   </main>
 
+  <!-- Mood Detail Modal -->
+  <div id="moodDetailModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);backdrop-filter:blur(4px);z-index:100;align-items:center;justify-content:center;padding:1rem;">
+    <div style="background:var(--surface);border-radius:var(--radius);width:100%;max-width:26rem;overflow:hidden;">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:1.5rem 1.75rem 1rem;">
+        <h3 class="headline" style="font-size:1.1rem;font-weight:700;">Mood Entry</h3>
+        <button class="icon-btn" onclick="closeMoodDetail()"><span class="material-symbols-outlined">close</span></button>
+      </div>
+      <div style="padding:0 1.75rem 1.5rem;display:flex;flex-direction:column;gap:1.25rem;">
+        <div style="display:flex;align-items:center;gap:1rem;">
+          <span id="moodDetailEmoji" style="font-size:3rem;"></span>
+          <div>
+            <p id="moodDetailLabel" style="font-size:1.2rem;font-weight:800;color:var(--on-surface);"></p>
+            <p id="moodDetailDate" style="font-size:0.8rem;color:var(--on-surface-variant);margin-top:0.1rem;"></p>
+          </div>
+        </div>
+        <div>
+          <p class="text-label" style="color:var(--on-surface-variant);margin-bottom:0.4rem;">Factors</p>
+          <p id="moodDetailFactors" style="font-size:0.9rem;color:var(--on-surface);"></p>
+        </div>
+        <div>
+          <p class="text-label" style="color:var(--on-surface-variant);margin-bottom:0.4rem;">Notes</p>
+          <p id="moodDetailNote" style="font-size:0.9rem;color:var(--on-surface);line-height:1.6;white-space:pre-wrap;"></p>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:0.75rem;padding:1rem 1.75rem 1.5rem;border-top:1px solid rgba(169,180,176,0.15);">
+        <button onclick="closeMoodDetail()" style="padding:0.6rem 1.25rem;border-radius:var(--radius-full);border:1px solid rgba(169,180,176,0.3);background:transparent;color:var(--on-surface-variant);font-family:var(--font-headline);font-size:0.85rem;font-weight:700;cursor:pointer;">Close</button>
+        <button id="editMoodBtn" onclick="editMoodFromModal()" class="btn-primary" style="padding:0.6rem 1.25rem;display:none;">
+          <span class="material-symbols-outlined" style="font-size:1rem;">edit</span> Edit
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts — must be after all HTML elements -->
   <script src="js/api.js"></script>
   <script src="js/components/nav.js"></script>
   <script src="js/mood.js"></script>

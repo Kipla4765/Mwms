@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Settings — MindSpace</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/app.css"/>
+</head>
+<body>
+  <main class="main-content" style="max-width:40rem;margin:0 auto;">
+    <h2 class="headline" style="font-size:2rem;font-weight:800;margin-bottom:0.5rem;">Settings</h2>
+    <p style="color:var(--on-surface-variant);margin-bottom:2rem;">Manage your account and preferences.</p>
+
+    <div class="card-surface" style="padding:2rem;margin-bottom:1.5rem;">
+      <h3 class="headline" style="font-size:1.1rem;font-weight:700;margin-bottom:1.25rem;">Account</h3>
+      <div id="accountInfo" style="display:flex;flex-direction:column;gap:0.75rem;">
+        <p style="color:var(--on-surface-variant);">Loading...</p>
+      </div>
+    </div>
+
+    <div class="card-surface" style="padding:2rem;">
+      <h3 class="headline" style="font-size:1.1rem;font-weight:700;margin-bottom:1.25rem;">Session</h3>
+      <button class="btn-primary" id="logoutBtn" style="background:var(--error);">
+        <span class="material-symbols-outlined">logout</span> Log out
+      </button>
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/components/nav.js"></script>
+  <script>
+    requireAuth();
+    initNav('Settings');
+
+    const user = JSON.parse(localStorage.getItem('ms_user') || '{}');
+    document.getElementById('accountInfo').innerHTML = `
+      <div><span style="font-size:0.75rem;color:var(--outline);text-transform:uppercase;letter-spacing:0.05em;">Name</span>
+        <p style="font-weight:600;margin-top:0.2rem;">${user.name || '—'}</p></div>
+      <div><span style="font-size:0.75rem;color:var(--outline);text-transform:uppercase;letter-spacing:0.05em;">Email</span>
+        <p style="font-weight:600;margin-top:0.2rem;">${user.email || '—'}</p></div>`;
+
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      try { await api.logout(); } catch (_) {}
+      localStorage.removeItem('ms_token');
+      localStorage.removeItem('ms_user');
+      location.href = 'index.html';
+    });
+  </script>
+</body>
+</html>

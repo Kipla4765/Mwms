@@ -38,6 +38,14 @@ public class MoodController {
         return ResponseEntity.status(HttpStatus.CREATED).body(moodService.logMood(req, userId));
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<MoodResponse> updateMood(@PathVariable Integer id,
+                                                    @Valid @RequestBody MoodRequest req,
+                                                    @AuthenticationPrincipal UserDetails principal) {
+        Integer userId = resolveUserId(principal);
+        return ResponseEntity.ok(moodService.updateMood(id, req, userId));
+    }
+
     private Integer resolveUserId(UserDetails principal) {
         return userRepository.findByEmail(principal.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"))

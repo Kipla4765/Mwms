@@ -15,6 +15,13 @@
     .ai-btn:hover { background:rgba(182,238,224,0.3); }
     .past-card { background:var(--surface-container-low);border-radius:var(--radius);padding:1.5rem;cursor:pointer;transition:transform 0.15s; }
     .past-card:hover { transform:translateY(-2px); }
+    /* AI response prose */
+    #aiResponse p { font-size:1rem;line-height:1.75;color:var(--on-surface);margin-bottom:0.75rem; }
+    #aiResponse p:last-child { margin-bottom:0; }
+    #aiResponse ol { padding-left:1.25rem;display:flex;flex-direction:column;gap:0.6rem; }
+    #aiResponse ol li { font-size:0.95rem;line-height:1.65;color:var(--on-surface); }
+    #aiResponse strong { font-weight:700;color:var(--on-surface); }
+    #aiResponse em { font-style:italic; }
   </style>
 </head>
 <body>
@@ -43,18 +50,18 @@
             </div>
             <div>
               <h3 class="headline" style="font-size:1.1rem;font-weight:700;">AI Reflection Assistant</h3>
-              <p style="font-size:0.8rem;color:var(--on-surface-variant);">Powered by Gemini — tap to analyze your thoughts</p>
+              <p style="font-size:0.8rem;color:var(--on-surface-variant);">Powered by AI — tap to analyze your thoughts</p>
             </div>
           </div>
 
           <div style="display:flex;flex-wrap:wrap;gap:0.75rem;">
-            <button class="ai-btn" onclick="aiAction('reflect')">
-              <span class="material-symbols-outlined" style="font-size:1rem;">psychology</span> Reflect
+            <button class="ai-btn" onclick="aiAction('reframe')">
+              <span class="material-symbols-outlined" style="font-size:1rem;">psychology</span> Reflect &amp; Reframe
             </button>
             <button class="ai-btn" onclick="aiAction('summarize')">
               <span class="material-symbols-outlined" style="font-size:1rem;">summarize</span> Summarize
             </button>
-            <button class="ai-btn" onclick="aiAction('coping')">
+            <button class="ai-btn" onclick="aiAction('suggest')">
               <span class="material-symbols-outlined" style="font-size:1rem;">verified</span> Suggest coping strategies
             </button>
           </div>
@@ -77,6 +84,45 @@
     <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">save</span>
   </button>
 
+  <!-- Entry View Modal -->
+  <div id="entryViewModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);backdrop-filter:blur(4px);z-index:100;align-items:center;justify-content:center;padding:1rem;">
+    <div style="background:var(--surface);border-radius:var(--radius);width:100%;max-width:38rem;max-height:90vh;overflow-y:auto;display:flex;flex-direction:column;">
+      <!-- Header -->
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:1.75rem 2rem 1rem;border-bottom:1px solid rgba(169,180,176,0.15);gap:1rem;">
+        <div style="flex:1;min-width:0;">
+          <h3 id="viewEntryTitle" class="headline" style="font-size:1.4rem;font-weight:800;margin-bottom:0.25rem;word-break:break-word;"></h3>
+          <p id="viewEntryDate" style="font-size:0.8rem;color:var(--on-surface-variant);"></p>
+        </div>
+        <button class="icon-btn" onclick="closeEntry()" aria-label="Close">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <!-- Body -->
+      <div style="padding:1.75rem 2rem;flex:1;">
+        <p id="viewEntryBody" style="font-size:1rem;line-height:1.8;color:var(--on-surface);white-space:pre-wrap;word-break:break-word;"></p>
+
+        <!-- AI reflection (shown only if exists) -->
+        <div id="viewEntryAi" style="display:none;margin-top:1.5rem;background:var(--surface-container-low);border-radius:var(--radius);padding:1.25rem;">
+          <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;">
+            <span class="material-symbols-outlined" style="color:var(--primary);font-size:1.1rem;font-variation-settings:'FILL' 1;">auto_awesome</span>
+            <span id="viewEntryAiAction" class="text-label" style="color:var(--primary);font-weight:700;"></span>
+          </div>
+          <div id="viewEntryAiBody" style="font-size:0.9rem;line-height:1.7;color:var(--on-surface-variant);"></div>
+        </div>
+      </div>
+      <!-- Actions -->
+      <div style="display:flex;justify-content:flex-end;gap:0.75rem;padding:1rem 2rem 1.5rem;border-top:1px solid rgba(169,180,176,0.15);">
+        <button onclick="deleteEntry()" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.6rem 1.25rem;border-radius:var(--radius-full);border:1px solid rgba(186,26,26,0.3);background:transparent;color:var(--error);font-family:var(--font-headline);font-size:0.85rem;font-weight:700;cursor:pointer;">
+          <span class="material-symbols-outlined" style="font-size:1rem;">delete</span> Delete
+        </button>
+        <button onclick="editEntry()" class="btn-primary" style="padding:0.6rem 1.25rem;">
+          <span class="material-symbols-outlined" style="font-size:1rem;">edit</span> Edit
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="js/api.js"></script>
   <script src="js/components/nav.js"></script>
   <script src="js/journal.js"></script>

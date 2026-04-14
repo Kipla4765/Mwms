@@ -51,6 +51,14 @@ public class JournalService {
         journalEntryRepository.delete(entry);
     }
 
+    public void saveAiReflection(Integer id, Integer userId, String action, String response) {
+        JournalEntry entry = findOwned(id, userId);
+        entry.setAiAction(action);
+        entry.setAiResponse(response);
+        entry.setAiSummary(response); // mirror into summary for convenience
+        journalEntryRepository.save(entry);
+    }
+
     private JournalEntry findOwned(Integer id, Integer userId) {
         return journalEntryRepository.findById(id)
                 .filter(e -> e.getUserId().equals(userId))

@@ -1,7 +1,15 @@
-// library.js — no initNav, no requireAuth redirect (page is self-contained)
+// library.js — has its own sidebar/nav, no initNav needed
+// Auth guard inline (api.js not loaded via nav.js here)
+if (!localStorage.getItem('ms_token')) {
+  sessionStorage.setItem('ms_redirect', window.location.href);
+  location.href = 'index.html';
+}
 
 let categories = [];
 let allResources = [];
+let currentPage  = 1;
+let filtered     = [];
+let activeCategory = null;
 
 const CATEGORY_ICONS = {
   'Stress Management': 'self_improvement',
@@ -45,13 +53,15 @@ async function loadLibrary() {
       featured: r.featured || false,
       title: r.title,
       desc: r.description || '',
-      meta: r.duration || r.meta || '',
+      meta: r.metaLabel || r.duration || r.meta || '',
       author: r.author || '',
       icon: TYPE_ICONS[r.type?.toLowerCase()] || 'article',
       iconColor: TYPE_COLORS[r.type?.toLowerCase()] || 'primary',
       img: r.imageUrl || '',
+      url: r.url || '',
       category: r.category?.name || r.category || '',
     }));
+    filtered = [...allResources];
     
     renderCategories();
     renderResources();
@@ -68,10 +78,7 @@ const IC = {
   tertiary:  { bg:'#caf9dc', text:'#37614b' },
 };
 
-let currentPage  = 1;
-const perPage    = 5; // featured + tip + 3 side cards
-let filtered     = [...allResources];
-let activeCategory = null;
+const perPage = 5; // featured + tip + 3 side cards
 
 // ── Categories ────────────────────────────────────────────────────────────────
 function renderCategories() {
@@ -250,11 +257,15 @@ window.handleSearch = handleSearch;
 function openResource(id) {
   const r = allResources.find(x => x.id === id);
   if (!r) return;
-  const msg = document.createElement('div');
-  msg.style.cssText = 'position:fixed;bottom:5rem;right:1.5rem;background:#33685d;color:#e3fff6;padding:0.875rem 1.5rem;border-radius:1rem;font-size:0.875rem;font-weight:500;z-index:100;animation:fadeIn 0.2s ease;';
-  msg.textContent = `"${r.title}" — detail page coming soon`;
-  document.body.appendChild(msg);
-  setTimeout(() => msg.remove(), 3000);
+  if (r.url) {
+    window.open(r.url, '_blank', 'noopener,noreferrer');
+  } else {
+    const msg = document.createElement('div');
+    msg.style.cssText = 'position:fixed;bottom:5rem;right:1.5rem;background:#33685d;color:#e3fff6;padding:0.875rem 1.5rem;border-radius:1rem;font-size:0.875rem;font-weight:500;z-index:100;';
+    msg.textContent = `"${r.title}" — link not available`;
+    document.body.appendChild(msg);
+    setTimeout(() => msg.remove(), 3000);
+  }
 }
 window.openResource = openResource;
 

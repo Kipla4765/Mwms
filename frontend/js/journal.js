@@ -33,17 +33,26 @@ if (draft) {
 
 // Save FAB
 document.getElementById('saveFab').addEventListener('click', async () => {
-  const title = document.getElementById('journalTitle').value.trim();
-  const body  = document.getElementById('journalBody').value.trim();
+  const title  = document.getElementById('journalTitle').value.trim();
+  const body   = document.getElementById('journalBody').value.trim();
   if (!title && !body) { showToast('Nothing to save yet.', 'default'); return; }
 
-  const fab = document.getElementById('saveFab');
+  const fab    = document.getElementById('saveFab');
+  const editId = fab.dataset.editId ? parseInt(fab.dataset.editId) : null;
   fab.innerHTML = '<span class="spinner" style="border-color:rgba(255,255,255,0.3);border-top-color:#fff;"></span>';
 
   try {
-    await api.createJournal({ title, body, date: new Date().toISOString() });
-    localStorage.removeItem('ms_journal_draft');
-    showToast('Entry saved!', 'success');
+    if (editId) {
+      await api.updateJournal(editId, { title, body });
+      delete fab.dataset.editId;
+      showToast('Entry updated!', 'success');
+    } else {
+      await api.createJournal({ title, body });
+      localStorage.removeItem('ms_journal_draft');
+      showToast('Entry saved!', 'success');
+    }
+    document.getElementById('journalTitle').value = '';
+    document.getElementById('journalBody').value  = '';
     await loadPastEntries();
   } catch (e) {
     showToast(e.message, 'error');
@@ -63,19 +72,8 @@ async function aiAction(action) {
 
   try {
     const data = await api.aiReflect(text, action);
-    responseEl.innerHTML = `
-      <p style="font-size:1rem;line-height:1.7;color:var(--on-surface);margin-bottom:${data.suggestions?.length ? '1rem' : '0'}">${data.summary || data.aiSummary || ''}</p>
-      ${data.suggestions?.length ? `
-        <div style="border-top:1px solid rgba(169,180,176,0.15);padding-top:1rem;">
-          <p class="text-label" style="color:var(--on-surface-variant);margin-bottom:0.75rem;">Suggestions for today:</p>
-          <ul style="display:flex;flex-direction:column;gap:0.75rem;list-style:none;">
-            ${data.suggestions.map(s => `
-              <li style="display:flex;align-items:flex-start;gap:0.75rem;">
-                <span class="material-symbols-outlined text-primary" style="margin-top:2px;font-size:1.1rem;">check_circle</span>
-                <span style="font-size:0.9rem;line-height:1.6;color:var(--on-surface);">${s}</span>
-              </li>`).join('')}
-          </ul>
-        </div>` : ''}`;
+    const reflection = data.reflection || '';
+    responseEl.innerHTML = marked.parse(reflection);
   } catch (e) {
     responseEl.innerHTML = `<p style="color:var(--error);">${e.message}</p>`;
   }
@@ -118,7 +116,7 @@ function renderPast() {
     const icon = icons[i % icons.length];
     const days = getDaysAgo(new Date(e.createdAt));
     return `
-      <div class="past-card" style="background:${c.bg};">
+      <div class="past-card" style="background:${c.bg};cursor:pointer;" onclick="openEntry(${e.id})">
         <span class="material-symbols-outlined" style="color:${c.text};margin-bottom:0.75rem;display:block;">${icon}</span>
         <h4 class="headline" style="font-size:1rem;font-weight:700;margin-bottom:0.4rem;">${e.title || 'Untitled'}</h4>
         <p style="font-size:0.8rem;color:var(--on-surface-variant);line-height:1.5;margin-bottom:0.75rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${(e.body || '').slice(0, 80)}...</p>
@@ -135,5 +133,67 @@ function getDaysAgo(date) {
   if (diff < 7) return `${diff} days ago`;
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
+
+// ── Entry viewer modal ────────────────────────────────────────────────────────
+let viewingEntry = null;
+
+function openEntry(id) {
+  const e = pastEntries.find(x => x.id === id);
+  if (!e) return;
+  viewingEntry = e;
+
+  document.getElementById('viewEntryTitle').textContent = e.title || 'Untitled';
+  document.getElementById('viewEntryDate').textContent  =
+    new Date(e.createdAt).toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  document.getElementById('viewEntryBody').textContent  = e.body || '';
+
+  const aiSection = document.getElementById('viewEntryAi');
+  if (e.aiResponse) {
+    aiSection.style.display = 'block';
+    document.getElementById('viewEntryAiAction').textContent =
+      e.aiAction ? e.aiAction.charAt(0).toUpperCase() + e.aiAction.slice(1) : 'AI Reflection';
+    document.getElementById('viewEntryAiBody').innerHTML = marked.parse(e.aiResponse);
+  } else {
+    aiSection.style.display = 'none';
+  }
+
+  document.getElementById('entryViewModal').style.display = 'flex';
+}
+window.openEntry = openEntry;
+
+function closeEntry() {
+  document.getElementById('entryViewModal').style.display = 'none';
+  viewingEntry = null;
+}
+window.closeEntry = closeEntry;
+
+function editEntry() {
+  if (!viewingEntry) return;
+  document.getElementById('journalTitle').value = viewingEntry.title || '';
+  document.getElementById('journalBody').value  = viewingEntry.body  || '';
+  document.getElementById('saveFab').dataset.editId = viewingEntry.id;
+  closeEntry();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  showToast('Editing — save when done.', 'default');
+}
+window.editEntry = editEntry;
+
+async function deleteEntry() {
+  if (!viewingEntry) return;
+  if (!confirm('Delete "' + (viewingEntry.title || 'this entry') + '"? This cannot be undone.')) return;
+  try {
+    await api.deleteJournal(viewingEntry.id);
+    closeEntry();
+    await loadPastEntries();
+    showToast('Entry deleted.', 'default');
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+window.deleteEntry = deleteEntry;
+
+document.getElementById('entryViewModal').addEventListener('click', function(ev) {
+  if (ev.target === this) closeEntry();
+});
 
 loadPastEntries();

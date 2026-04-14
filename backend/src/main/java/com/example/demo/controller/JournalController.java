@@ -65,8 +65,12 @@ public class JournalController {
     }
 
     @PostMapping("/ai")
-    public ResponseEntity<Map<String, String>> aiReflect(@Valid @RequestBody AiReflectRequest req) {
+    public ResponseEntity<Map<String, String>> aiReflect(@Valid @RequestBody AiReflectRequest req,
+                                                          @AuthenticationPrincipal UserDetails principal) {
         String reflection = geminiService.reflect(req.text(), req.action());
+        if (req.journalId() != null) {
+            journalService.saveAiReflection(req.journalId(), resolveUserId(principal), req.action(), reflection);
+        }
         return ResponseEntity.ok(Map.of("reflection", reflection));
     }
 

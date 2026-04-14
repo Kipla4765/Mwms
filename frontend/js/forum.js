@@ -25,12 +25,12 @@ async function loadPosts() {
     const posts = await api.getPosts();
     allPosts = posts.map(p => ({
       id: p.id,
-      author: p.authorName || 'Anonymous',
+      author: p.displayName || 'Anonymous',
       icon: AVATAR_ICONS[p.id % AVATAR_ICONS.length],
       colorIdx: p.id % AVATAR_COLORS.length,
       tag: p.tag || 'General',
       time: getTimeAgo(new Date(p.createdAt)),
-      text: p.content,
+      text: p.body,
       support: p.supportCount || 0,
       replies: p.replyCount || 0,
       supported: supportedPosts.has(p.id),
@@ -85,7 +85,7 @@ function renderPosts() {
             <span class="material-symbols-outlined" style="font-size:1rem;font-variation-settings:'FILL' ${post.supported ? 1 : 0};">favorite</span>
             ${post.support} Support
           </button>
-          <button class="action-btn" style="background:transparent;color:var(--on-surface-variant);" onclick="showToast('Replies coming soon!','default')">
+          <button class="action-btn" style="background:transparent;color:var(--on-surface-variant);" onclick="openReplies(${post.id})">
             <span class="material-symbols-outlined" style="font-size:1rem;">reply</span>
             ${post.replies} ${post.replies === 1 ? 'Reply' : 'Replies'}
           </button>
@@ -133,16 +133,51 @@ async function toggleSupport(id) {
 }
 
 // ── New post modal ────────────────────────────────────────────────────────────
-let selectedTag = null;
+let selectedTag  = null;
+let postMode     = 'anon'; // 'anon' | 'self'
+
+function setPostMode(mode) {
+  postMode = mode;
+  const user = JSON.parse(localStorage.getItem('ms_user') || '{}');
+  const btnAnon = document.getElementById('btnAnon');
+  const btnSelf = document.getElementById('btnSelf');
+  const hint    = document.getElementById('postModeHint');
+  const submitBtn = document.getElementById('submitPostBtn');
+
+  if (mode === 'anon') {
+    btnAnon.style.background    = 'var(--primary)';
+    btnAnon.style.color         = 'var(--on-primary)';
+    btnAnon.style.borderColor   = 'var(--primary)';
+    btnSelf.style.background    = 'transparent';
+    btnSelf.style.color         = 'var(--on-surface-variant)';
+    btnSelf.style.borderColor   = 'var(--outline-variant)';
+    hint.textContent = 'A random alias will be assigned — no one can trace this to you.';
+    submitBtn.textContent = 'Post anonymously';
+  } else {
+    btnSelf.style.background    = 'var(--primary)';
+    btnSelf.style.color         = 'var(--on-primary)';
+    btnSelf.style.borderColor   = 'var(--primary)';
+    btnAnon.style.background    = 'transparent';
+    btnAnon.style.color         = 'var(--on-surface-variant)';
+    btnAnon.style.borderColor   = 'var(--outline-variant)';
+    hint.textContent = `Your name "${user.name || 'You'}" will be visible to everyone.`;
+    submitBtn.textContent = `Post as ${user.name || 'yourself'}`;
+  }
+}
+window.setPostMode = setPostMode;
 
 function openNewPost() {
+  const user = JSON.parse(localStorage.getItem('ms_user') || '{}');
+  document.getElementById('selfLabel').textContent = user.name || 'Yourself';
   document.getElementById('newPostModal').style.display = 'flex';
   document.getElementById('postContent').focus();
+  setPostMode('anon'); // always reset to anon on open
 }
 function closeNewPost() {
   document.getElementById('newPostModal').style.display = 'none';
   document.getElementById('postContent').value = '';
   selectedTag = null;
+  postMode = 'anon';
   document.querySelectorAll('#postTagPicker .chip').forEach(c => c.classList.remove('active'));
 }
 window.openNewPost  = openNewPost;
@@ -163,16 +198,20 @@ async function submitPost() {
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span>';
 
+  const user = JSON.parse(localStorage.getItem('ms_user') || '{}');
+  // Pass displayName only when posting as self — backend generates alias when omitted
+  const displayName = postMode === 'self' ? (user.name || '') : '';
+
   try {
-    await api.createPost({ text, tag: selectedTag || 'General' });
+    await api.createPost({ body: text, tag: selectedTag || 'General', displayName });
     closeNewPost();
     await loadPosts();
-    showToast('Posted anonymously!', 'success');
+    showToast(postMode === 'self' ? `Posted as ${user.name}!` : 'Posted anonymously!', 'success');
   } catch (e) {
     showToast(e.message, 'error');
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Post anonymously';
+    btn.textContent = postMode === 'self' ? `Post as ${user.name || 'yourself'}` : 'Post anonymously';
   }
 }
 window.submitPost = submitPost;
@@ -180,6 +219,69 @@ window.submitPost = submitPost;
 // Close modal on overlay click
 document.getElementById('newPostModal').addEventListener('click', function (e) {
   if (e.target === this) closeNewPost();
+});
+
+// ── Replies modal ─────────────────────────────────────────────────────────────
+let activeReplyPostId = null;
+
+async function openReplies(postId) {
+  activeReplyPostId = postId;
+  const modal = document.getElementById('repliesModal');
+  const list  = document.getElementById('repliesList');
+  modal.style.display = 'flex';
+  list.innerHTML = '<p style="color:var(--on-surface-variant);padding:1rem 0;">Loading...</p>';
+  document.getElementById('replyInput').value = '';
+
+  try {
+    const replies = await api.getReplies(postId);
+    if (!replies.length) {
+      list.innerHTML = '<p style="color:var(--on-surface-variant);padding:1rem 0;">No replies yet. Be the first!</p>';
+      return;
+    }
+    list.innerHTML = replies.map(r => `
+      <div style="padding:1rem 0;border-bottom:1px solid rgba(169,180,176,0.12);">
+        <div style="display:flex;justify-content:space-between;margin-bottom:0.4rem;">
+          <span style="font-weight:700;font-size:0.9rem;">${r.displayName || 'Anonymous'}</span>
+          <span style="font-size:0.75rem;color:var(--outline);">${getTimeAgo(new Date(r.createdAt))}</span>
+        </div>
+        <p style="font-size:0.9rem;line-height:1.6;color:var(--on-surface);">${r.body}</p>
+      </div>`).join('');
+  } catch (e) {
+    list.innerHTML = `<p style="color:var(--error);">${e.message}</p>`;
+  }
+}
+window.openReplies = openReplies;
+
+function closeReplies() {
+  document.getElementById('repliesModal').style.display = 'none';
+  activeReplyPostId = null;
+}
+window.closeReplies = closeReplies;
+
+document.getElementById('repliesModal').addEventListener('click', function (e) {
+  if (e.target === this) closeReplies();
+});
+
+document.getElementById('submitReplyBtn').addEventListener('click', async () => {
+  const text = document.getElementById('replyInput').value.trim();
+  if (!text || !activeReplyPostId) return;
+  const btn = document.getElementById('submitReplyBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    await api.addReply(activeReplyPostId, text);
+    // update reply count in local state
+    const post = allPosts.find(p => p.id === activeReplyPostId);
+    if (post) post.replies++;
+    await openReplies(activeReplyPostId); // refresh list
+    renderPosts();
+    showToast('Reply posted!', 'success');
+  } catch (e) {
+    showToast(e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Reply';
+  }
 });
 
 loadPosts();

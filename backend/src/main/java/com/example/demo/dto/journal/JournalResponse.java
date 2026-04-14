@@ -1,5 +1,6 @@
 package com.example.demo.dto.journal;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import java.time.LocalDateTime;
 
 public record JournalResponse(
@@ -9,6 +10,6 @@ public record JournalResponse(
         String aiSummary,
         String aiAction,
         String aiResponse,
-        LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss") LocalDateTime createdAt,
+        @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss") LocalDateTime updatedAt
 ) {}

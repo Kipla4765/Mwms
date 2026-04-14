@@ -77,8 +77,39 @@
           <label class="text-label" style="display:block;margin-bottom:0.5rem;color:var(--on-surface-variant);">Your message</label>
           <textarea class="input-field" id="postContent" rows="5" placeholder="What's on your mind? This is a safe space..."></textarea>
         </div>
-        <p style="font-size:0.75rem;color:var(--on-surface-variant);">Posts are anonymous by default. Be kind and supportive.</p>
+
+        <!-- Identity toggle -->
+        <div style="background:var(--surface-container-low);border-radius:var(--radius);padding:1rem;display:flex;flex-direction:column;gap:0.75rem;">
+          <p class="text-label" style="color:var(--on-surface-variant);margin-bottom:0.25rem;">Post as</p>
+          <div style="display:flex;gap:0.5rem;">
+            <button id="btnAnon" onclick="setPostMode('anon')"
+              style="flex:1;padding:0.6rem;border-radius:var(--radius-full);border:2px solid var(--primary);background:var(--primary);color:var(--on-primary);font-family:var(--font-headline);font-size:0.8rem;font-weight:700;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:0.4rem;">
+              <span class="material-symbols-outlined" style="font-size:1rem;">domino_mask</span> Anonymous
+            </button>
+            <button id="btnSelf" onclick="setPostMode('self')"
+              style="flex:1;padding:0.6rem;border-radius:var(--radius-full);border:2px solid var(--outline-variant);background:transparent;color:var(--on-surface-variant);font-family:var(--font-headline);font-size:0.8rem;font-weight:700;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:0.4rem;">
+              <span class="material-symbols-outlined" style="font-size:1rem;">person</span> <span id="selfLabel">Yourself</span>
+            </button>
+          </div>
+          <p id="postModeHint" style="font-size:0.72rem;color:var(--on-surface-variant);">A random alias will be assigned — no one can trace this to you.</p>
+        </div>
+
         <button class="btn-primary" id="submitPostBtn" onclick="submitPost()" style="align-self:flex-end;">Post anonymously</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Replies Modal -->
+  <div class="modal-overlay" id="repliesModal" style="display:none;">
+    <div class="modal">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;">
+        <h3 class="headline" style="font-size:1.2rem;font-weight:700;">Replies</h3>
+        <button class="icon-btn" onclick="closeReplies()"><span class="material-symbols-outlined">close</span></button>
+      </div>
+      <div id="repliesList" style="max-height:20rem;overflow-y:auto;margin-bottom:1.5rem;"></div>
+      <div style="display:flex;gap:0.75rem;align-items:flex-end;">
+        <textarea class="input-field" id="replyInput" rows="2" placeholder="Write a supportive reply..." style="flex:1;resize:none;"></textarea>
+        <button class="btn-primary" id="submitReplyBtn" style="flex-shrink:0;">Reply</button>
       </div>
     </div>
   </div>

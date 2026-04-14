@@ -1,5 +1,6 @@
 package com.example.demo.dto.mood;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -8,5 +9,5 @@ public record MoodResponse(
         int value,
         String note,
         List<String> factors,
-        LocalDateTime loggedAt
+        @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss") LocalDateTime loggedAt
 ) {}
