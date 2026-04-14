@@ -4,11 +4,11 @@ A full-stack mental wellness platform for students featuring mood tracking, AI-p
 
 ## Tech Stack
 
-- **Backend**: Spring Boot 3.x with Java 17
-- **Database**: MySQL
+- **Backend**: Spring Boot 4.x with Java 21
+- **Database**: MySQL 8.0
 - **Authentication**: JWT (JSON Web Tokens)
-- **AI**: Google Gemini API for journal reflections
-- **Frontend**: Vanilla JavaScript SPA (separate repo)
+- **AI**: OpenRouter API (google/gemma-3n-e2b-it:free)
+- **Frontend**: Vanilla JavaScript SPA
 
 ## Features
 
@@ -58,6 +58,7 @@ mwms/
 | `/api/auth/logout` | POST | Logout (revoke token) |
 | `/api/mood` | GET | Get user's mood entries |
 | `/api/mood` | POST | Create mood entry |
+| `/api/mood/{id}` | PUT | Update mood entry |
 | `/api/journal` | GET | Get user's journal entries |
 | `/api/journal/{id}` | GET | Get single journal entry |
 | `/api/journal` | POST | Create journal entry |
@@ -76,19 +77,22 @@ mwms/
 
 ### Prerequisites
 
-- Java 17+
+- Java 21+
 - Maven 3.8+
 - MySQL 8.0+
 
 ### Database Setup
 
 ```bash
+# Create schema and tables
 mysql -u root -p < database/schema.sql
 
-# power shell
-Get-Content database/schema.sql | mysql -u root -p
+# Seed library resources (real articles, guides, audio)
+mysql -u root -p < database/seed_resources.sql
 
-# OR Manually import/run the sql script in you sql client or workbenck
+# PowerShell equivalent
+Get-Content database/schema.sql | mysql -u root -p
+Get-Content database/seed_resources.sql | mysql -u root -p
 ```
 
 ### Backend Configuration
@@ -96,14 +100,32 @@ Get-Content database/schema.sql | mysql -u root -p
 Edit `backend/src/main/resources/application.properties`:
 
 ```properties
-spring.datasource.url=jdbc:mysql://localhost:3306/mindspace
-spring.datasource.username=your_username
-spring.datasource.password=your_password
+spring.application.name=mindspace
 
-app.jwt.secret=your-jwt-secret-key
+# ── Database ──────────────────────────────────────────────────────────────────
+spring.datasource.url=jdbc:mysql://localhost:3306/mindspace?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+spring.datasource.username=your_db_username
+spring.datasource.password=your_db_password
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=false
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQLDialect
+spring.jpa.open-in-view=false
+
+# ── JWT ───────────────────────────────────────────────────────────────────────
+# Generate a secure base64 key: openssl rand -base64 64
+app.jwt.secret=your-base64-encoded-secret-key
 app.jwt.expiration-ms=86400000
-app.gemini.api-key=your-gemini-api-key
+
+# ── AI (OpenRouter) ───────────────────────────────────────────────────────────
+app.openrouter.api-key=your-openrouter-api-key
+app.openrouter.models=google/gemma-3n-e2b-it:free,minimax/minimax-m2.5:free,meta-llama/llama-4-scout:free,microsoft/mai-ds-r1:free,deepseek/deepseek-r1-0528:free
 ```
+
+> Get a free OpenRouter API key at https://openrouter.ai
+>
+> The `models` property is a comma-separated fallback chain — if the first model is rate limited, the service automatically tries the next one. All listed models are free tier. You can add or reorder them as needed.
 
 ### Run Backend
 
